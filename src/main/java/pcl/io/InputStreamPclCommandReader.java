@@ -28,6 +28,7 @@ public class InputStreamPclCommandReader implements PclCommandReader {
     private long currentPosition = -1L;
     private PclUtil pclUtil = new PclUtil();
     private ByteArrayOutputStream commandBytes = new ByteArrayOutputStream();
+    private PclCommandFactory pclCommandFactory = new PclCommandFactory();
 
     public InputStreamPclCommandReader(InputStream inputStream) {
         if (inputStream == null) throw new IllegalArgumentException("A 'null' InputStream was given");
@@ -74,6 +75,7 @@ public class InputStreamPclCommandReader implements PclCommandReader {
                         }
                     } else if (commandType == CommandType.PARAMETERIZED) {
                         if (pclUtil.isEscape(currentByte)) {
+                            // we have encounter the start of the next command
                             commandState = CommandState.BUILD;
                             currentPosition--;
                             inputStream.reset();
@@ -86,21 +88,12 @@ public class InputStreamPclCommandReader implements PclCommandReader {
                     }
                 }
 
-
-                if (commandState == CommandState.CAPTURE
-                        || commandState == CommandState.CAPTURE_AND_BUILD) {
+                if (commandState == CommandState.CAPTURE || commandState == CommandState.CAPTURE_AND_BUILD) {
                     commandBytes.write(currentByte);
                 }
 
                 if (commandState == CommandState.BUILD || commandState == CommandState.CAPTURE_AND_BUILD) {
-                    switch (commandType) {
-                        case TWO_BYTE:
-                            command = new TwoByteCommand(commandPosition, commandBytes.toByteArray());
-                            break;
-                        case PARAMETERIZED:
-                            command = new ParameterizedCommand(commandPosition, commandBytes.toByteArray());
-                            break;
-                    }
+                    command = pclCommandFactory.build(commandPosition, commandBytes.toByteArray());
                 }
             }
         } catch (IOException e) {
@@ -126,6 +119,10 @@ public class InputStreamPclCommandReader implements PclCommandReader {
         } catch (IOException e) {
             throw new PclCommandReaderException("A problem occurred while trying to skip " + numberOfBytesToSkip + " byte(s)", e);
         }
+    }
+
+    public void setPclCommandFactory(PclCommandFactory pclCommandFactory) {
+        this.pclCommandFactory = pclCommandFactory;
     }
 
     private static enum CommandType {

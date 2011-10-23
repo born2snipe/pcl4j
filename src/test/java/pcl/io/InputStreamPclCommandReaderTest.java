@@ -40,7 +40,7 @@ public class InputStreamPclCommandReaderTest {
         byte[] expectedCommand = {PclUtil.ESCAPE, '&', 'l', '1', PclUtil.LOWEST_TERMINATION_BYTE};
         byte[] expectedCommand2 = {PclUtil.ESCAPE, '&', 'l', '1', PclUtil.HIGHEST_TERMINATION_BYTE};
 
-        byte[] fileBytes = concat(expectedCommand, expectedCommand2);
+        byte[] fileBytes = ByteArrayUtil.concat(expectedCommand, expectedCommand2);
         PclCommandReader reader = createPclCommandReader(fileBytes);
 
         assertParameterizedCommand(0L, expectedCommand, reader.nextCommand());
@@ -68,7 +68,7 @@ public class InputStreamPclCommandReaderTest {
         byte[] command1 = new byte[]{PclUtil.ESCAPE, '&', 'l', '1', 'O', 1, 2, 3, 4};
         byte[] command2 = new byte[]{PclUtil.ESCAPE, PclUtil.HIGHEST_2BYTE_COMMAND_OPERATOR};
 
-        byte[] fileBytes = concat(command1, command2);
+        byte[] fileBytes = ByteArrayUtil.concat(command1, command2);
         PclCommandReader reader = createPclCommandReader(fileBytes);
 
         assertParameterizedCommand(0L, command1, reader.nextCommand());
@@ -92,7 +92,7 @@ public class InputStreamPclCommandReaderTest {
     @Test
     public void shouldBeAbleToSkipAndContinueReading() {
         byte[] expectedCommand = TWO_BYTE_COMMAND;
-        byte[] fileData = concat(badData(5), expectedCommand);
+        byte[] fileData = ByteArrayUtil.concat(badData(5), expectedCommand);
         PclCommandReader reader = createPclCommandReader(fileData);
 
         reader.skip(5);
@@ -145,7 +145,7 @@ public class InputStreamPclCommandReaderTest {
     @Test
     public void shouldHandleReadingMultiple2CharacterCommands() {
         byte[] expectedCommand = TWO_BYTE_COMMAND;
-        byte[] expectedBytes = concat(expectedCommand, expectedCommand);
+        byte[] expectedBytes = ByteArrayUtil.concat(expectedCommand, expectedCommand);
         PclCommandReader reader = createPclCommandReader(expectedBytes);
 
         assert2ByteCommand(0L, expectedCommand, reader.nextCommand());
@@ -156,7 +156,7 @@ public class InputStreamPclCommandReaderTest {
     @Test
     public void shouldSkipLeadingBytesUntilAValidCommandIsFound() {
         byte[] expectedCommand = TWO_BYTE_COMMAND;
-        byte[] expectedBytes = concat(badData(3), expectedCommand);
+        byte[] expectedBytes = ByteArrayUtil.concat(badData(3), expectedCommand);
         PclCommandReader reader = createPclCommandReader(expectedBytes);
 
         assert2ByteCommand(3L, expectedCommand, reader.nextCommand());
@@ -166,7 +166,7 @@ public class InputStreamPclCommandReaderTest {
     @Ignore("Not sure if this is really a valid scenario")
     public void shouldSkipAnEscapeByteIfThereAreTwoEscapeBytesThatAreConsecutive() {
         byte[] expectedCommand = TWO_BYTE_COMMAND;
-        byte[] expectedBytes = concat(new byte[]{PclUtil.ESCAPE}, expectedCommand);
+        byte[] expectedBytes = ByteArrayUtil.concat(new byte[]{PclUtil.ESCAPE}, expectedCommand);
         PclCommandReader reader = createPclCommandReader(expectedBytes);
 
         assert2ByteCommand(1L, expectedCommand, reader.nextCommand());
@@ -177,7 +177,7 @@ public class InputStreamPclCommandReaderTest {
         byte[] expectedCommand = TWO_BYTE_COMMAND;
         byte[] expectedCommand2 = new byte[]{PclUtil.ESCAPE, PclUtil.HIGHEST_2BYTE_COMMAND_OPERATOR};
 
-        byte[] expectedBytes = concat(expectedCommand, badData(3), expectedCommand2);
+        byte[] expectedBytes = ByteArrayUtil.concat(expectedCommand, badData(3), expectedCommand2);
         PclCommandReader reader = createPclCommandReader(expectedBytes);
 
         assert2ByteCommand(0L, expectedCommand, reader.nextCommand());
@@ -194,7 +194,7 @@ public class InputStreamPclCommandReaderTest {
 
     @Test
     public void shouldSkipPartialCommandsUntilAValidCommandIsFound() {
-        byte[] expectedBytes = concat(new byte[]{PclUtil.ESCAPE, 0, PclUtil.HIGHEST_2BYTE_COMMAND_OPERATOR}, TWO_BYTE_COMMAND);
+        byte[] expectedBytes = ByteArrayUtil.concat(new byte[]{PclUtil.ESCAPE, 0, PclUtil.HIGHEST_2BYTE_COMMAND_OPERATOR}, TWO_BYTE_COMMAND);
         PclCommandReader reader = createPclCommandReader(expectedBytes);
 
         assertCommand(3L, TWO_BYTE_COMMAND, reader.nextCommand());
@@ -208,7 +208,7 @@ public class InputStreamPclCommandReaderTest {
         PclCommand command = null;
         int count = 0;
         while ((command = reader.nextCommand()) != null) {
-            System.out.println(command.toAscii());
+            System.out.println(command);
             count++;
         }
         System.out.println((System.currentTimeMillis() - start) + " millis; " + count + " commands");
@@ -246,17 +246,4 @@ public class InputStreamPclCommandReaderTest {
         return data;
     }
 
-    private byte[] concat(byte[]... bytes) {
-        int count = 0;
-        for (byte[] data : bytes) {
-            count += data.length;
-        }
-        byte[] temp = new byte[count];
-        int offset = 0;
-        for (byte[] data : bytes) {
-            System.arraycopy(data, 0, temp, offset, data.length);
-            offset += data.length;
-        }
-        return temp;
-    }
 }
