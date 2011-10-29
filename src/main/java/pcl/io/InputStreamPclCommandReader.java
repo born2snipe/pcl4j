@@ -14,17 +14,17 @@
 
 package pcl.io;
 
-import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PushbackInputStream;
 
 /**
  * A PclCommandReader implementation backed by an InputStream
  */
 public class InputStreamPclCommandReader implements PclCommandReader {
     private static final int EOF = -1;
-    private InputStream inputStream;
+    private PushbackInputStream inputStream;
     private long currentPosition = -1L;
     private PclUtil pclUtil = new PclUtil();
     private ByteArrayOutputStream commandBytes = new ByteArrayOutputStream();
@@ -32,7 +32,7 @@ public class InputStreamPclCommandReader implements PclCommandReader {
 
     public InputStreamPclCommandReader(InputStream inputStream) {
         if (inputStream == null) throw new IllegalArgumentException("A 'null' InputStream was given");
-        this.inputStream = new BufferedInputStream(inputStream);
+        this.inputStream = new PushbackInputStream(inputStream, 1);
     }
 
     public PclCommand nextCommand() {
@@ -43,7 +43,6 @@ public class InputStreamPclCommandReader implements PclCommandReader {
             CommandState commandState = CommandState.LOOK_FOR_COMMAND;
             CommandType commandType = CommandType.UNKNOWN;
             while (command == null) {
-                inputStream.mark(1);
                 currentByte = (byte) inputStream.read();
                 if (currentByte != EOF) {
                     currentPosition++;
@@ -78,7 +77,7 @@ public class InputStreamPclCommandReader implements PclCommandReader {
                             // we have encounter the start of the next command
                             commandState = CommandState.BUILD;
                             currentPosition--;
-                            inputStream.reset();
+                            inputStream.unread(currentByte);
                         }
                     } else {
                         if (pclUtil.isEscape(currentByte)) {
@@ -88,11 +87,11 @@ public class InputStreamPclCommandReader implements PclCommandReader {
                     }
                 }
 
-                if (commandState == CommandState.CAPTURE || commandState == CommandState.CAPTURE_AND_BUILD) {
+                if (shouldCaptureTheCurrentByte(commandState)) {
                     commandBytes.write(currentByte);
                 }
 
-                if (commandState == CommandState.BUILD || commandState == CommandState.CAPTURE_AND_BUILD) {
+                if (shouldBuildCommand(commandState)) {
                     command = pclCommandFactory.build(commandPosition, commandBytes.toByteArray());
                 }
             }
@@ -103,6 +102,14 @@ public class InputStreamPclCommandReader implements PclCommandReader {
         }
 
         return command;
+    }
+
+    private boolean shouldCaptureTheCurrentByte(CommandState commandState) {
+        return commandState == CommandState.CAPTURE || commandState == CommandState.CAPTURE_AND_BUILD;
+    }
+
+    private boolean shouldBuildCommand(CommandState commandState) {
+        return commandState == CommandState.BUILD || commandState == CommandState.CAPTURE_AND_BUILD;
     }
 
 
