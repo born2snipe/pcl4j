@@ -30,6 +30,27 @@ public class PclUtilTest {
     }
 
     @Test
+    public void isParameterCharacter_shouldHandleAllBytesBetweenTheHighestAndLowestParameterByte() {
+        for (byte value = PclUtil.LOWEST_PARAMETER_BYTE; value <= PclUtil.HIGHEST_PARAMETER_BYTE; value++) {
+            assertTrue(util.isParameterCharacter(value));
+        }
+    }
+
+    @Test
+    public void isParameterCharacter_shouldHandleAllBytesLowerThanTheLowestParameterByte() {
+        for (byte value = Byte.MIN_VALUE; value < PclUtil.LOWEST_PARAMETER_BYTE; value++) {
+            assertFalse(util.isParameterCharacter(value));
+        }
+    }
+
+    @Test
+    public void isParameterCharacter_shouldHandleAllBytesHigherThanTheHighestParameterCharacter() {
+        for (byte value = PclUtil.HIGHEST_PARAMETER_BYTE + 1; value <= Byte.MAX_VALUE && value != Byte.MIN_VALUE; value++) {
+            assertFalse(util.isParameterCharacter(value));
+        }
+    }
+
+    @Test
     public void isGroupCharacter_shouldHandleAllBytesHigherThanTheHighestGroupCharacter() {
         for (byte value = PclUtil.HIGHEST_GROUP_BYTE + 1; value <= Byte.MAX_VALUE && value != Byte.MIN_VALUE; value++) {
             assertFalse(util.isGroupCharacter(value));

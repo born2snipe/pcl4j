@@ -25,6 +25,8 @@ public class PclUtil {
     public static final byte HIGHEST_PARAMETERIZED_BYTE = 47;
     public static final byte LOWEST_GROUP_BYTE = 96;
     public static final byte HIGHEST_GROUP_BYTE = 126;
+    public static final int LOWEST_PARAMETER_BYTE = 96;
+    public static final byte HIGHEST_PARAMETER_BYTE = 126;
 
     public boolean is2ByteCommandOperator(byte value) {
         return value >= LOWEST_2BYTE_COMMAND_OPERATOR && value <= HIGHEST_2BYTE_COMMAND_OPERATOR;
@@ -44,5 +46,9 @@ public class PclUtil {
 
     public boolean isGroupCharacter(byte value) {
         return value >= LOWEST_GROUP_BYTE && value <= HIGHEST_GROUP_BYTE;
+    }
+
+    public boolean isParameterCharacter(byte value) {
+        return value >= LOWEST_PARAMETER_BYTE && value <= HIGHEST_PARAMETER_BYTE;
     }
 }
