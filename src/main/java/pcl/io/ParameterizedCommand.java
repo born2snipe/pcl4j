@@ -16,6 +16,10 @@ package pcl.io;
 
 
 public class ParameterizedCommand extends PclCommand {
+    public ParameterizedCommand(byte[] bytes) {
+        super(bytes);
+    }
+
     public ParameterizedCommand(long position, byte[] bytes) {
         super(position, bytes);
     }

@@ -26,6 +26,10 @@ public abstract class PclCommand {
     private final byte[] bytes;
     private final long position;
 
+    public PclCommand(byte[] bytes) {
+        this(-1, bytes);
+    }
+
     public PclCommand(long position, byte[] bytes) {
         this.position = position;
         this.bytes = bytes;
@@ -50,5 +54,25 @@ public abstract class PclCommand {
             builder.append((char) bytes[i]);
         }
         return builder.toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        PclCommand command = (PclCommand) o;
+
+        if (position != command.position) return false;
+        if (!Arrays.equals(bytes, command.bytes)) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = bytes != null ? Arrays.hashCode(bytes) : 0;
+        result = 31 * result + (int) (position ^ (position >>> 32));
+        return result;
     }
 }

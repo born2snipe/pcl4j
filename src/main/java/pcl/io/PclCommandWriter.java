@@ -15,11 +15,26 @@
 package pcl.io;
 
 
+/**
+ * A writer that writes PCL commands
+ */
 public interface PclCommandWriter {
+    /**
+     * Attempts to write the given PclCommand
+     *
+     * @param command - the command to write
+     * @throws PclCommandWriterException is thrown when a problem occurs
+     */
     void write(PclCommand command) throws PclCommandWriterException;
 
+    /**
+     * Clean up the resources occupied
+     */
     void close();
 
+    /**
+     * Exception thrown when a problem occurs in the PclCommandWriter
+     */
     public static class PclCommandWriterException extends RuntimeException {
         public PclCommandWriterException(String s) {
             super(s);

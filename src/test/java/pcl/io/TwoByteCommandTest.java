@@ -21,6 +21,11 @@ import static junit.framework.Assert.assertEquals;
 
 public class TwoByteCommandTest {
     @Test(expected = IllegalArgumentException.class)
+    public void shouldBlowUpIfYouGiveItLessThan2Bytes_withoutPosition() {
+        new TwoByteCommand(new byte[1]);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
     public void shouldBlowUpIfYouGiveItLessThan2Bytes() {
         new TwoByteCommand(0L, new byte[1]);
     }

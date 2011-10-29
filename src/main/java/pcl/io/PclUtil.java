@@ -14,7 +14,9 @@
 
 package pcl.io;
 
-
+/**
+ * Utility class for checking for the magic PCL bytes
+ */
 public class PclUtil {
     public static final byte ESCAPE = 27;
     public static final byte LOWEST_2BYTE_COMMAND_OPERATOR = 48;
@@ -25,7 +27,7 @@ public class PclUtil {
     public static final byte HIGHEST_PARAMETERIZED_BYTE = 47;
     public static final byte LOWEST_GROUP_BYTE = 96;
     public static final byte HIGHEST_GROUP_BYTE = 126;
-    public static final int LOWEST_PARAMETER_BYTE = 96;
+    public static final byte LOWEST_PARAMETER_BYTE = 96;
     public static final byte HIGHEST_PARAMETER_BYTE = 126;
 
     public boolean is2ByteCommandOperator(byte value) {

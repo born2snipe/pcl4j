@@ -28,13 +28,22 @@ package pcl.io;
  * the ASCII table within the range 48-126 decimal
  */
 public class TwoByteCommand extends PclCommand {
+    public TwoByteCommand(byte[] bytes) {
+        super(bytes);
+        verifyByteCount(bytes);
+    }
+
     public TwoByteCommand(long position, byte[] bytes) {
         super(position, bytes);
-        if (bytes.length != 2)
-            throw new IllegalArgumentException("Not a valid number of bytes given (" + bytes.length + " byte(s)  given)");
+        verifyByteCount(bytes);
     }
 
     public byte getOperation() {
         return getBytes()[1];
+    }
+
+    private void verifyByteCount(byte[] bytes) {
+        if (bytes.length != 2)
+            throw new IllegalArgumentException("Not a valid number of bytes given (" + bytes.length + " byte(s)  given)");
     }
 }
