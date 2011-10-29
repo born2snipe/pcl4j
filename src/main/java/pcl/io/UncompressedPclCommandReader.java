@@ -33,6 +33,7 @@ public class UncompressedPclCommandReader implements PclCommandReader {
     private final byte[] commandLeadingBytes = new byte[3];
     private final ByteArrayOutputStream uncompressedCommandData = new ByteArrayOutputStream();
     private final PclCommandReader pclCommandReader;
+    private PclCommandFactory pclCommandFactory = new PclCommandFactory();
 
     public UncompressedPclCommandReader(PclCommandReader pclCommandReader) {
         this.pclCommandReader = pclCommandReader;
@@ -87,7 +88,7 @@ public class UncompressedPclCommandReader implements PclCommandReader {
 
                     byte terminator = convertParameterToTerminator(currentByte);
                     uncompressedCommandData.write(terminator);
-                    queuedCommands.add(new ParameterizedCommand(commandPosition, uncompressedCommandData.toByteArray()));
+                    queuedCommands.add(pclCommandFactory.build(commandPosition, uncompressedCommandData.toByteArray()));
                     uncompressedCommandData.reset();
                     state = CommandState.INIT;
                 }
@@ -97,7 +98,7 @@ public class UncompressedPclCommandReader implements PclCommandReader {
                 if (commandsAreQueuedUp()) {
                     commandPosition += commandLeadingBytes.length;
                 }
-                queuedCommands.add(new ParameterizedCommand(commandPosition, uncompressedCommandData.toByteArray()));
+                queuedCommands.add(pclCommandFactory.build(commandPosition, uncompressedCommandData.toByteArray()));
             }
         } catch (IOException e) {
         } finally {
@@ -119,6 +120,10 @@ public class UncompressedPclCommandReader implements PclCommandReader {
 
     public void close() {
         pclCommandReader.close();
+    }
+
+    public void setPclCommandFactory(PclCommandFactory pclCommandFactory) {
+        this.pclCommandFactory = pclCommandFactory;
     }
 
     private static enum CommandState {

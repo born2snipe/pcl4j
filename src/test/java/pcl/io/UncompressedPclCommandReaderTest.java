@@ -99,4 +99,19 @@ public class UncompressedPclCommandReaderTest {
 
         verify(delegateReader).close();
     }
+
+    @Test
+    public void shouldBeOverridePclCommandFactoryImplementation() {
+
+        PclCommandFactory pclCommandFactory = mock(PclCommandFactory.class);
+        pclCommandReader.setPclCommandFactory(pclCommandFactory);
+
+        ParameterizedCommand originalCommand = new ParameterizedCommand(2L, new byte[]{PclUtil.ESCAPE, '&', 'l', '1', 'o', '2', 'o', '3', 'O'});
+        ParameterizedCommand expectedCommand = new ParameterizedCommand(1L, new byte[4]);
+
+        when(delegateReader.nextCommand()).thenReturn(originalCommand);
+        when(pclCommandFactory.build(2L, new byte[]{PclUtil.ESCAPE, '&', 'l', '1', 'O'})).thenReturn(expectedCommand);
+
+        assertSame(expectedCommand, pclCommandReader.nextCommand());
+    }
 }
