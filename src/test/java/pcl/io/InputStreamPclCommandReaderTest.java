@@ -22,7 +22,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 
-import static junit.framework.Assert.*;
+import static junit.framework.Assert.assertNull;
+import static junit.framework.Assert.assertTrue;
 
 public class InputStreamPclCommandReaderTest {
     private static final byte[] TWO_BYTE_COMMAND = new byte[]{PclUtil.ESCAPE, PclUtil.LOWEST_2BYTE_COMMAND_OPERATOR};
@@ -201,14 +202,14 @@ public class InputStreamPclCommandReaderTest {
     }
 
     @Test
-    @Ignore
+    @Ignore("debugging purposes only, should go away")
     public void x() throws IOException {
         long start = System.currentTimeMillis();
-        InputStreamPclCommandReader reader = new InputStreamPclCommandReader(Thread.currentThread().getContextClassLoader().getResource("example/sample.pcl").openStream());
+        PclCommandReader reader = new UncompressedPclCommandReader(new InputStreamPclCommandReader(Thread.currentThread().getContextClassLoader().getResource("example/sample.pcl").openStream()));
         PclCommand command = null;
         int count = 0;
         while ((command = reader.nextCommand()) != null) {
-            System.out.println(command);
+            System.out.println(count + "# @ " + command.getPosition() + " " + command.toAscii());
             count++;
         }
         System.out.println((System.currentTimeMillis() - start) + " millis; " + count + " commands");
@@ -216,20 +217,15 @@ public class InputStreamPclCommandReaderTest {
 
 
     private void assert2ByteCommand(long expectedPosition, byte[] expectedBytes, PclCommand actualCommand) {
-        assertEquals("not the right kind of command", TwoByteCommand.class, actualCommand.getClass());
-        assertCommand(expectedPosition, expectedBytes, actualCommand);
+        AssertPcl.assert2ByteCommand(expectedPosition, expectedBytes, actualCommand);
     }
 
     private void assertParameterizedCommand(long expectedPosition, byte[] expectedCommandBytes, PclCommand command) {
-        assertEquals("not the right kind of command", ParameterizedCommand.class, command.getClass());
-        assertCommand(expectedPosition, expectedCommandBytes, command);
+        AssertPcl.assertParameterizedCommand(expectedPosition, expectedCommandBytes, command);
     }
 
     private void assertCommand(long expectedPosition, byte[] expectedBytes, PclCommand actualCommand) {
-        assertNotNull("The command should NOT be null", actualCommand);
-        byte[] actualBytes = actualCommand.getBytes();
-        assertTrue("The bytes in the command are not correct. expect=" + Arrays.toString(expectedBytes) + ", actual=" + Arrays.toString(actualBytes), Arrays.equals(expectedBytes, actualBytes));
-        assertEquals("The position of the command in the file is wrong", expectedPosition, actualCommand.getPosition());
+        AssertPcl.assertCommand(expectedPosition, expectedBytes, actualCommand);
     }
 
     private PclCommandReader createPclCommandReader(InputStream inputStream) {
