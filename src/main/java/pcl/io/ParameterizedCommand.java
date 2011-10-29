@@ -14,7 +14,9 @@
 
 package pcl.io;
 
-
+/**
+ * Represents a Parameterized PCL command
+ */
 public class ParameterizedCommand extends PclCommand {
     public ParameterizedCommand(byte[] bytes) {
         super(bytes);

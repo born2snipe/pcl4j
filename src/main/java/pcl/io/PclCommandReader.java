@@ -15,7 +15,7 @@
 package pcl.io;
 
 /**
- * A reader that parses PclCommands
+ * A reader that parses PCL commands
  */
 public interface PclCommandReader {
     /**

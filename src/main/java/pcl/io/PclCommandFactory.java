@@ -14,8 +14,17 @@
 
 package pcl.io;
 
-
+/**
+ * A factory that builds a PclCommand object
+ */
 public class PclCommandFactory {
+    /**
+     * Build a PclCommand from the given bytes and position
+     *
+     * @param position    - the location of the ESC byte of the command
+     * @param commandData - the bytes that make of the entire command
+     * @return a PclCommand object
+     */
     public PclCommand build(long position, byte[] commandData) {
         if (commandData.length == 2) {
             return new TwoByteCommand(position, commandData);
