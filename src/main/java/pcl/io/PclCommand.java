@@ -46,8 +46,8 @@ public abstract class PclCommand {
 
     public String toAscii() {
         StringBuilder builder = new StringBuilder();
-        for (byte data : bytes) {
-            builder.append((char) data);
+        for (int i = 1; i < bytes.length; i++) {
+            builder.append((char) bytes[i]);
         }
         return builder.toString();
     }
