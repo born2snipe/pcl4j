@@ -18,8 +18,8 @@ package pcl.io;
 import org.junit.Before;
 import org.junit.Test;
 
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertTrue;
+import static junit.framework.Assert.*;
+import static pcl.io.PclUtil.*;
 
 public class PclUtilTest {
     private PclUtil util;
@@ -27,6 +27,61 @@ public class PclUtilTest {
     @Before
     public void setUp() throws Exception {
         util = new PclUtil();
+    }
+
+    @Test
+    public void getParameterizedByte_shouldReturnTheParameterizedByteOfACommand() {
+        assertEquals(2, util.getParameterizedByte(new TwoByteCommand(new byte[]{1, 2})));
+    }
+
+    @Test
+    public void getGroupByte_shouldReturnTheGroupByteFromAParameterizedCommand() {
+        assertEquals(3, util.getGroupByte(new ParameterizedCommand(new byte[]{1, 2, 3})));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void getGroupByte_shouldBlowUpIfATwoByteCommandIsGiven() {
+        util.getGroupByte(new TwoByteCommand(new byte[2]));
+    }
+
+    @Test
+    public void changeTerminatorToParameter_allTerminatorsCanBeConverted() {
+        int range = PclUtil.HIGHEST_TERMINATION_BYTE - PclUtil.LOWEST_TERMINATION_BYTE;
+        byte currentTerminator = PclUtil.LOWEST_TERMINATION_BYTE;
+        for (int i = 0; i < range; i++) {
+            assertEquals(PclUtil.LOWEST_PARAMETER_BYTE + i, util.changeTerminatorToParameter(currentTerminator));
+            currentTerminator++;
+        }
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void changeTerminatorToParameter_blowUpIfNotTerminationByte() {
+        util.changeTerminatorToParameter((byte) -1);
+    }
+
+    @Test
+    public void hasBinaryData_twoByteCommandIsAlwaysFalse() {
+        TwoByteCommand command = new TwoByteCommand(new byte[2]);
+
+        assertFalse(util.hasBinaryData(command));
+    }
+
+    @Test
+    public void hasBinaryData_commandHasNoBinaryData() {
+        ParameterizedCommand command = new ParameterizedCommand(new byte[]{
+                ESCAPE, LOWEST_PARAMETERIZED_BYTE, LOWEST_GROUP_BYTE, '1', LOWEST_TERMINATION_BYTE
+        });
+
+        assertFalse(util.hasBinaryData(command));
+    }
+
+    @Test
+    public void hasBinaryData_commandHasBinaryData() {
+        ParameterizedCommand command = new ParameterizedCommand(new byte[]{
+                ESCAPE, LOWEST_PARAMETERIZED_BYTE, LOWEST_GROUP_BYTE, '1', LOWEST_TERMINATION_BYTE, '1', '2'
+        });
+
+        assertTrue(util.hasBinaryData(command));
     }
 
     @Test

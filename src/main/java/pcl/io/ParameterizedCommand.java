@@ -20,9 +20,17 @@ package pcl.io;
 public class ParameterizedCommand extends PclCommand {
     public ParameterizedCommand(byte[] bytes) {
         super(bytes);
+        validateBytes(bytes);
     }
 
     public ParameterizedCommand(long position, byte[] bytes) {
         super(position, bytes);
+        validateBytes(bytes);
+    }
+
+    private void validateBytes(byte[] bytes) {
+        if (bytes == null || bytes.length < 3) {
+            throw new IllegalArgumentException("A parameterized command should have more than 2 bytes");
+        }
     }
 }

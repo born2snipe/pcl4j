@@ -18,6 +18,9 @@ package pcl.io;
  * Utility class for checking for the magic PCL bytes
  */
 public class PclUtil {
+    public static final int PARAMETERIZED_BYTE_POSITION = 1;
+    public static final int GROUP_BYTE_POSITION = 2;
+    public static final int VALUE_BYTE_START_POSITION = 3;
     public static final byte ESCAPE = 27;
     public static final byte LOWEST_2BYTE_COMMAND_OPERATOR = 48;
     public static final byte HIGHEST_2BYTE_COMMAND_OPERATOR = 126;
@@ -29,28 +32,139 @@ public class PclUtil {
     public static final byte HIGHEST_GROUP_BYTE = 126;
     public static final byte LOWEST_PARAMETER_BYTE = 96;
     public static final byte HIGHEST_PARAMETER_BYTE = 126;
+    private static final int PARAMETER_TO_TERMINATOR_DIFFERENCE = LOWEST_PARAMETER_BYTE - LOWEST_TERMINATION_BYTE;
 
+    /**
+     * Determines if the given byte is a 2 byte command operator
+     * <p>
+     * 48 >= value <= 126
+     * </p>
+     *
+     * @param value the byte to check
+     * @return true - is a 2 byte operator<br/>false - is not a 2 byte operator
+     */
     public boolean is2ByteCommandOperator(byte value) {
         return value >= LOWEST_2BYTE_COMMAND_OPERATOR && value <= HIGHEST_2BYTE_COMMAND_OPERATOR;
     }
 
+    /**
+     * Determines if the given byte is an ESCAPE byte
+     *
+     * @param value the byte to check
+     * @return true - is an ESCAPE byte<br/>false - is not an ESCAPE byte
+     */
     public boolean isEscape(byte value) {
         return value == ESCAPE;
     }
 
+    /**
+     * Determines if the given byte is a termination byte
+     * <p>
+     * 64 >= value <= 94
+     * </p>
+     *
+     * @param value the byte to check
+     * @return true - is a termination byte<br/> false - is not a termination byte
+     */
     public boolean isTermination(byte value) {
         return value >= LOWEST_TERMINATION_BYTE && value <= HIGHEST_TERMINATION_BYTE;
     }
 
+    /**
+     * Determines if the given byte is a parameterized byte
+     * <p>
+     * 33 >= value <= 47
+     * </p>
+     *
+     * @param value the byte to check
+     * @return true - is a parameterized byte<br/>false - is not a parameterized byte
+     */
     public boolean isParameterizedCharacter(byte value) {
         return value >= LOWEST_PARAMETERIZED_BYTE && value <= HIGHEST_PARAMETERIZED_BYTE;
     }
 
+    /**
+     * Determines if the given byte is a group character
+     * <p>
+     * 96 >= value <= 126
+     * </p>
+     *
+     * @param value the byte to check
+     * @return true - is a group character<br/>false - is not a group character
+     */
     public boolean isGroupCharacter(byte value) {
         return value >= LOWEST_GROUP_BYTE && value <= HIGHEST_GROUP_BYTE;
     }
 
+    /**
+     * Determines if the given byte is a parameter character
+     * <p>
+     * 96 >= value <= 126
+     * </p>
+     *
+     * @param value the byte to check
+     * @return true - is a parameter character<br/>false - is not a parameter character
+     */
     public boolean isParameterCharacter(byte value) {
         return value >= LOWEST_PARAMETER_BYTE && value <= HIGHEST_PARAMETER_BYTE;
+    }
+
+    /**
+     * Determines if the given command has binary data
+     *
+     * @param command the command to check
+     * @return true - binary data was found<br/>false - no binary data was found
+     */
+    public boolean hasBinaryData(PclCommand command) {
+        byte[] data = command.getBytes();
+        if (data.length == 2) {
+            return false;
+        }
+
+        int terminatorIndex = -1;
+        for (int i = VALUE_BYTE_START_POSITION + 1; i < data.length; i++) {
+            if (isTermination(data[i])) {
+                terminatorIndex = i;
+                break;
+            }
+        }
+        return data.length - 1 > terminatorIndex;
+    }
+
+    /**
+     * Converts a termination byte into a parameter byte
+     *
+     * @param terminationByte the termination byte to be converted
+     * @return the resulting parameter byte
+     * @throws IllegalArgumentException when the given byte is not a termination byte
+     */
+    public byte changeTerminatorToParameter(byte terminationByte) throws IllegalArgumentException {
+        if (!isTermination(terminationByte)) {
+            throw new IllegalArgumentException("Not a terminator byte given. byte=[" + terminationByte + "]");
+        }
+        return (byte) (terminationByte + PARAMETER_TO_TERMINATOR_DIFFERENCE);
+    }
+
+    /**
+     * Gets the Group byte from the given command
+     *
+     * @param command the command to get the group byte from
+     * @return the group byte of the command
+     */
+    public byte getGroupByte(PclCommand command) {
+        if (command.getBytes().length == 2) {
+            throw new IllegalArgumentException("2 byte commands do not have group bytes");
+        }
+        return command.getBytes()[GROUP_BYTE_POSITION];
+    }
+
+    /**
+     * Gets the parameterized byte from the given command
+     *
+     * @param command the command to get the parameterized byte from
+     * @return the parameterized byte of the command
+     */
+    public byte getParameterizedByte(PclCommand command) {
+        return command.getBytes()[PARAMETERIZED_BYTE_POSITION];
     }
 }
