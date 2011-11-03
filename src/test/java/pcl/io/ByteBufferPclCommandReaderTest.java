@@ -77,6 +77,17 @@ public class ByteBufferPclCommandReaderTest {
     }
 
     @Test
+    public void shouldTreatTheEscapeCharacterAsPartOfTheBinaryDataIfTheFollowingByteIsNotAParameterizedByte() {
+        byte[] fileContents = new byte[]{
+                PclUtil.ESCAPE, PclUtil.LOWEST_PARAMETERIZED_BYTE, PclUtil.LOWEST_GROUP_BYTE, '1', PclUtil.LOWEST_TERMINATION_BYTE, PclUtil.ESCAPE, '0'
+        };
+
+        ByteBufferPclCommandReader reader = createReader(fileContents);
+
+        assertParameterizedCommand(0L, fileContents, reader.nextCommand());
+    }
+
+    @Test
     public void shouldHandleParsingAParameterizedCommand() {
         byte[] fileContents = new byte[]{PclUtil.ESCAPE, PclUtil.LOWEST_PARAMETERIZED_BYTE, PclUtil.LOWEST_GROUP_BYTE, '1', PclUtil.LOWEST_TERMINATION_BYTE};
 

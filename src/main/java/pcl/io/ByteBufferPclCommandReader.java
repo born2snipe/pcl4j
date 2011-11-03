@@ -63,9 +63,13 @@ public class ByteBufferPclCommandReader implements PclCommandReader {
                     commandData.write(currentByte);
                     command = pclCommandFactory.build(commandPosition, commandData.toByteArray());
                 } else if (pclUtil.isEscape(currentByte)) {
-                    buffer.reset();
-                    filePosition--;
-                    command = pclCommandFactory.build(commandPosition, commandData.toByteArray());
+                    if (isNextByteAParameterizedByte()) {
+                        command = pclCommandFactory.build(commandPosition, commandData.toByteArray());
+                        buffer.reset();
+                        filePosition--;
+                    } else {
+                        commandData.write(currentByte);
+                    }
                 } else {
                     commandData.write(currentByte);
                 }
@@ -75,6 +79,15 @@ public class ByteBufferPclCommandReader implements PclCommandReader {
         }
 
         return null;
+    }
+
+    private boolean isNextByteAParameterizedByte() {
+        boolean result = false;
+        if (filePosition + 1 < buffer.capacity()) {
+            result = pclUtil.isParameterizedCharacter(buffer.get());
+            buffer.position(buffer.position() - 1);
+        }
+        return result;
     }
 
     private byte readNextByte() {
