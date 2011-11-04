@@ -32,7 +32,7 @@ public class PclUtil {
     public static final byte HIGHEST_GROUP_BYTE = 126;
     public static final byte LOWEST_PARAMETER_BYTE = 96;
     public static final byte HIGHEST_PARAMETER_BYTE = 126;
-    private static final int PARAMETER_TO_TERMINATOR_DIFFERENCE = LOWEST_PARAMETER_BYTE - LOWEST_TERMINATION_BYTE;
+    public static final int PARAMETER_TO_TERMINATOR_DIFFERENCE = LOWEST_PARAMETER_BYTE - LOWEST_TERMINATION_BYTE;
 
     /**
      * Determines if the given byte is a 2 byte command operator
@@ -152,9 +152,7 @@ public class PclUtil {
      * @return the group byte of the command
      */
     public byte getGroupByte(PclCommand command) {
-        if (command.getBytes().length == 2) {
-            throw new IllegalArgumentException("2 byte commands do not have group bytes");
-        }
+        requiresParameterizedCommand(command);
         return command.getBytes()[GROUP_BYTE_POSITION];
     }
 
@@ -166,5 +164,41 @@ public class PclUtil {
      */
     public byte getParameterizedByte(PclCommand command) {
         return command.getBytes()[PARAMETERIZED_BYTE_POSITION];
+    }
+
+    /**
+     * Gets the terminator byte from the given command
+     *
+     * @param command the command to get the terminator byte from
+     * @return the terminator byte of the command
+     */
+    public byte getTerminatorByte(PclCommand command) {
+        requiresParameterizedCommand(command);
+        byte[] data = command.getBytes();
+        for (int i = 0; i < data.length; i++) {
+            if (isTermination(data[i])) {
+                return data[i];
+            }
+        }
+        throw new IllegalStateException("Could not locate terminator byte in command: " + command);
+    }
+
+    /**
+     * Converts a parameter byte into a terminator byte
+     *
+     * @param parameterByte the parameter byte to be converted
+     * @return terminator byte
+     */
+    public byte changeParameterToTerminator(byte parameterByte) {
+        if (!isParameterCharacter(parameterByte)) {
+            throw new IllegalArgumentException("Not a parameter byte given. byte=[" + parameterByte + "]");
+        }
+        return (byte) (parameterByte - PARAMETER_TO_TERMINATOR_DIFFERENCE);
+    }
+
+    private void requiresParameterizedCommand(PclCommand command) {
+        if (command.getBytes().length == 2) {
+            throw new IllegalArgumentException("2 byte commands do not have group bytes");
+        }
     }
 }

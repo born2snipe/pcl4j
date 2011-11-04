@@ -29,7 +29,7 @@ public class ByteBufferPclCommandReaderTest {
     @Ignore("debugging purposes only, should go away")
     public void realFile() throws Exception {
         long start = System.currentTimeMillis();
-        PclCommandReader reader = new MappedFilePclCommandReader(new File(Thread.currentThread().getContextClassLoader().getResource("example/sample.pcl").toURI()));
+        PclCommandReader reader = new EbcdicToAsciiPclCommandReader(new MappedFilePclCommandReader(new File(Thread.currentThread().getContextClassLoader().getResource("example/sample.pcl").toURI())));
         PclCommand command = null;
         int count = 0;
         while ((command = reader.nextCommand()) != null) {
@@ -74,6 +74,21 @@ public class ByteBufferPclCommandReaderTest {
 
         reader.skip(2L);
         assert2ByteCommand(2L, expectCommand, reader.nextCommand());
+    }
+
+    @Test
+    public void shouldFixLowercaseTerminationBytes() {
+        byte[] fileContents = new byte[]{
+                PclUtil.ESCAPE, PclUtil.LOWEST_PARAMETERIZED_BYTE, PclUtil.LOWEST_GROUP_BYTE, '1', PclUtil.LOWEST_PARAMETER_BYTE
+        };
+
+        byte[] expectedCommand = new byte[]{
+                PclUtil.ESCAPE, PclUtil.LOWEST_PARAMETERIZED_BYTE, PclUtil.LOWEST_GROUP_BYTE, '1', PclUtil.LOWEST_TERMINATION_BYTE
+        };
+
+        ByteBufferPclCommandReader reader = createReader(fileContents);
+
+        assertParameterizedCommand(0L, expectedCommand, reader.nextCommand());
     }
 
     @Test

@@ -35,6 +35,32 @@ public class PclUtilTest {
     }
 
     @Test
+    public void getTerminatorByte_shouldReturnTheTerminatorByteFromAParameterizedCommandWithBinaryData() {
+        assertEquals(PclUtil.LOWEST_TERMINATION_BYTE, util.getTerminatorByte(new ParameterizedCommand(new byte[]{
+                PclUtil.ESCAPE, PclUtil.PARAMETERIZED_BYTE_POSITION, PclUtil.LOWEST_GROUP_BYTE, '1', PclUtil.LOWEST_TERMINATION_BYTE, 1, 2, 3
+        })));
+    }
+
+    @Test
+    public void getTerminatorByte_shouldReturnTheTerminatorByteFromAParameterizedCommand() {
+        assertEquals(PclUtil.LOWEST_TERMINATION_BYTE, util.getTerminatorByte(new ParameterizedCommand(new byte[]{
+                PclUtil.ESCAPE, PclUtil.PARAMETERIZED_BYTE_POSITION, PclUtil.LOWEST_GROUP_BYTE, '1', PclUtil.LOWEST_TERMINATION_BYTE
+        })));
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void getTerminatorByte_shouldBlowUpIfTerminatorByteCouldNotBeLocated() {
+        util.getTerminatorByte(new ParameterizedCommand(new byte[]{
+                PclUtil.ESCAPE, PclUtil.PARAMETERIZED_BYTE_POSITION, PclUtil.LOWEST_GROUP_BYTE, 0
+        }));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void getTerminatorByte_shouldBlowUpIfTheCommandGivenIsATwoByteCommand() {
+        util.getTerminatorByte(new TwoByteCommand(new byte[2]));
+    }
+
+    @Test
     public void getGroupByte_shouldReturnTheGroupByteFromAParameterizedCommand() {
         assertEquals(3, util.getGroupByte(new ParameterizedCommand(new byte[]{1, 2, 3})));
     }
@@ -57,6 +83,21 @@ public class PclUtilTest {
     @Test(expected = IllegalArgumentException.class)
     public void changeTerminatorToParameter_blowUpIfNotTerminationByte() {
         util.changeTerminatorToParameter((byte) -1);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void changeParameterToTerminator_shouldBlowUpIfANonParameterIsGiven() {
+        util.changeParameterToTerminator((byte) -1);
+    }
+
+    @Test
+    public void changeParameterToTerminator_allParametersCanBeConverted() {
+        int range = PclUtil.HIGHEST_TERMINATION_BYTE - PclUtil.LOWEST_TERMINATION_BYTE;
+        byte currentParameter = PclUtil.LOWEST_PARAMETER_BYTE;
+        for (int i = 0; i < range; i++) {
+            assertEquals(PclUtil.LOWEST_TERMINATION_BYTE + i, util.changeParameterToTerminator(currentParameter));
+            currentParameter++;
+        }
     }
 
     @Test
