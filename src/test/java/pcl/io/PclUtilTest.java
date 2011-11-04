@@ -18,6 +18,8 @@ package pcl.io;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Arrays;
+
 import static junit.framework.Assert.*;
 import static pcl.io.PclUtil.*;
 
@@ -98,6 +100,41 @@ public class PclUtilTest {
             assertEquals(PclUtil.LOWEST_TERMINATION_BYTE + i, util.changeParameterToTerminator(currentParameter));
             currentParameter++;
         }
+    }
+
+    @Test
+    public void getBinaryData_twoByteCommandIsAlwaysFalse() {
+        TwoByteCommand command = new TwoByteCommand(new byte[2]);
+
+        assertEquals(0, util.getBinaryData(command).length);
+    }
+
+    @Test
+    public void getBinaryData_commandHasBinaryData() {
+        ParameterizedCommand command = new ParameterizedCommand(new byte[]{
+                ESCAPE, LOWEST_PARAMETERIZED_BYTE, LOWEST_GROUP_BYTE, '1', LOWEST_TERMINATION_BYTE, '1', '2'
+        });
+        byte[] expectedBinaryData = new byte[]{'1', '2'};
+
+        assertTrue(Arrays.equals(expectedBinaryData, util.getBinaryData(command)));
+    }
+
+    @Test
+    public void getBinaryData_commandHasNoBinaryData() {
+        ParameterizedCommand command = new ParameterizedCommand(new byte[]{
+                ESCAPE, LOWEST_PARAMETERIZED_BYTE, LOWEST_GROUP_BYTE, '1', LOWEST_TERMINATION_BYTE
+        });
+
+        assertEquals(0, util.getBinaryData(command).length);
+    }
+
+    @Test
+    public void getBinaryData_commandHasNoBinaryDataOrValue() {
+        ParameterizedCommand command = new ParameterizedCommand(new byte[]{
+                ESCAPE, LOWEST_PARAMETERIZED_BYTE, LOWEST_GROUP_BYTE, LOWEST_TERMINATION_BYTE
+        });
+
+        assertEquals(0, util.getBinaryData(command).length);
     }
 
     @Test

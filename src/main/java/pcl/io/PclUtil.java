@@ -116,19 +116,7 @@ public class PclUtil {
      * @return true - binary data was found<br/>false - no binary data was found
      */
     public boolean hasBinaryData(PclCommand command) {
-        byte[] data = command.getBytes();
-        if (data.length == 2) {
-            return false;
-        }
-
-        int terminatorIndex = -1;
-        for (int i = VALUE_BYTE_START_POSITION + 1; i < data.length; i++) {
-            if (isTermination(data[i])) {
-                terminatorIndex = i;
-                break;
-            }
-        }
-        return data.length - 1 > terminatorIndex;
+        return getBinaryData(command).length > 0;
     }
 
     /**
@@ -196,9 +184,39 @@ public class PclUtil {
         return (byte) (parameterByte - PARAMETER_TO_TERMINATOR_DIFFERENCE);
     }
 
+    /**
+     * Captures the binary data of the given command
+     *
+     * @param command - the command to capture the binary data from
+     * @return a byte array containing all the binary data
+     */
+    public byte[] getBinaryData(PclCommand command) {
+        if (is2ByteCommand(command)) {
+            return new byte[0];
+        }
+
+        byte[] data = command.getBytes();
+        int startOfBinaryDataIndex = -1;
+        for (int i = GROUP_BYTE_POSITION + 1; i < data.length; i++) {
+            if (isTermination(data[i])) {
+                startOfBinaryDataIndex = i + 1;
+                break;
+            }
+        }
+
+        byte[] temp = new byte[data.length - startOfBinaryDataIndex];
+        System.arraycopy(data, startOfBinaryDataIndex, temp, 0, temp.length);
+
+        return temp;
+    }
+
     private void requiresParameterizedCommand(PclCommand command) {
-        if (command.getBytes().length == 2) {
+        if (is2ByteCommand(command)) {
             throw new IllegalArgumentException("2 byte commands do not have group bytes");
         }
+    }
+
+    private boolean is2ByteCommand(PclCommand command) {
+        return command.getBytes().length == 2;
     }
 }
