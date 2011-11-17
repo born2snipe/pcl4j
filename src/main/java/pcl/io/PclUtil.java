@@ -14,6 +14,8 @@
 
 package pcl.io;
 
+import java.io.ByteArrayOutputStream;
+
 /**
  * Utility class for checking for the magic PCL bytes
  */
@@ -210,9 +212,36 @@ public class PclUtil {
         return temp;
     }
 
+    /**
+     * Captures the value bytes of the given command
+     * <p/>
+     * Defaults the value to zero if a 'value' is not found in the command
+     *
+     * @param command - the command to capture the value from
+     * @return a byte array containing all the value bytes
+     */
+    public byte[] getValue(PclCommand command) {
+        requiresParameterizedCommand(command);
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        byte[] commandBytes = command.getBytes();
+
+        if (isTermination(commandBytes[VALUE_BYTE_START_POSITION])) {
+            output.write('0');
+        } else {
+            for (int i = VALUE_BYTE_START_POSITION; i < commandBytes.length; i++) {
+                byte currentByte = commandBytes[i];
+                if (isTermination(currentByte)) {
+                    break;
+                }
+                output.write(currentByte);
+            }
+        }
+        return output.toByteArray();
+    }
+
     private void requiresParameterizedCommand(PclCommand command) {
         if (is2ByteCommand(command)) {
-            throw new IllegalArgumentException("2 byte commands do not have group bytes");
+            throw new IllegalArgumentException("Parameterized command required, but received a 2 byte command");
         }
     }
 

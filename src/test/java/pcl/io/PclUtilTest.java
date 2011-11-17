@@ -32,6 +32,36 @@ public class PclUtilTest {
     }
 
     @Test
+    public void getValue_shouldReturnTheValueOfTheCommand() {
+        final ParameterizedCommand command = new ParameterizedCommand(new byte[]{
+                PclUtil.ESCAPE,
+                PclUtil.LOWEST_PARAMETERIZED_BYTE,
+                PclUtil.LOWEST_GROUP_BYTE,
+                '1', '2', '3',
+                PclUtil.LOWEST_TERMINATION_BYTE
+        });
+
+        assertBytes(new byte[]{'1', '2', '3'}, util.getValue(command));
+    }
+
+    @Test
+    public void getValue_shouldReturnAByteArrayWithZeroIfNoValueIsFoundInTheCommand() {
+        final ParameterizedCommand command = new ParameterizedCommand(new byte[]{
+                PclUtil.ESCAPE,
+                PclUtil.LOWEST_PARAMETERIZED_BYTE,
+                PclUtil.LOWEST_GROUP_BYTE,
+                PclUtil.LOWEST_TERMINATION_BYTE
+        });
+
+        assertBytes(new byte[]{'0'}, util.getValue(command));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void getValue_shouldBlowUpIfTheCommandIsA2ByteCommand() {
+        util.getValue(new TwoByteCommand(new byte[0]));
+    }
+
+    @Test
     public void getParameterizedByte_shouldReturnTheParameterizedByteOfACommand() {
         assertEquals(2, util.getParameterizedByte(new TwoByteCommand(new byte[]{1, 2})));
     }
@@ -282,4 +312,8 @@ public class PclUtilTest {
         }
     }
 
+    private void assertBytes(byte[] expectedValue, byte[] actualBytes) {
+        assertTrue("Byte do not match. expected=[" + new String(expectedValue) + "], actual=[" + new String(actualBytes) + "]",
+                Arrays.equals(expectedValue, actualBytes));
+    }
 }
