@@ -75,19 +75,26 @@ public class UncompressedPclCommandReader implements PclCommandReader {
                     state = CommandState.CAPTURE;
                 }
 
-                if (isStartOfNextCommand(currentByte)) {
+                if (isTerminator(currentByte)) {
+                    state = CommandState.BUILD_AND_CAPTURE_REMAINING;
+                } else if (isStartOfNextCommand(currentByte)) {
                     state = CommandState.BUILD;
                 } else {
                     uncompressedCommandData.write(currentByte);
                 }
 
-                if (state == CommandState.BUILD) {
+                if (state == CommandState.BUILD || state == CommandState.BUILD_AND_CAPTURE_REMAINING) {
                     if (commandsAreQueuedUp()) {
                         commandPosition += commandLeadingBytes.length;
                     }
 
                     byte terminator = convertParameterToTerminator(currentByte);
                     uncompressedCommandData.write(terminator);
+
+                    if (state == CommandState.BUILD_AND_CAPTURE_REMAINING) {
+                        uncompressedCommandData.write(captureRemainingBytes(inputStream));
+                    }
+
                     queuedCommands.add(pclCommandFactory.build(commandPosition, uncompressedCommandData.toByteArray()));
                     uncompressedCommandData.reset();
                     state = CommandState.INIT;
@@ -106,8 +113,22 @@ public class UncompressedPclCommandReader implements PclCommandReader {
         }
     }
 
+    private byte[] captureRemainingBytes(InputStream inputStream) throws IOException {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        byte[] buffer = new byte[1024];
+        int length = -1;
+        while ((length = inputStream.read(buffer)) != -1) {
+            output.write(buffer, 0, length);
+        }
+        return output.toByteArray();
+    }
+
+    private boolean isTerminator(byte currentByte) {
+        return pclUtil.isTermination(currentByte);
+    }
+
     private byte convertParameterToTerminator(byte currentByte) {
-        return (byte) (currentByte - PARAMETER_TO_TERMINATOR_OFFSET);
+        return isTerminator(currentByte) ? currentByte : (byte) (currentByte - PARAMETER_TO_TERMINATOR_OFFSET);
     }
 
     private boolean isStartOfNextCommand(byte currentByte) {
@@ -127,6 +148,6 @@ public class UncompressedPclCommandReader implements PclCommandReader {
     }
 
     private static enum CommandState {
-        INIT, CAPTURE, BUILD
+        INIT, CAPTURE, BUILD, BUILD_AND_CAPTURE_REMAINING
     }
 }

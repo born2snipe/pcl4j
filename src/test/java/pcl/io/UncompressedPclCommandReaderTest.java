@@ -34,6 +34,18 @@ public class UncompressedPclCommandReaderTest {
         pclCommandReader = new UncompressedPclCommandReader(delegateReader);
     }
 
+
+    @Test
+    public void twoCommandsCompressedFollowedByBinaryData() {
+        ParameterizedCommand originalCommand = new ParameterizedCommand(2L, ((char) PclUtil.ESCAPE + "*p1711x2204Y2.00% (Adj: 12 Mos/Term: 12 Mos)").getBytes());
+        when(delegateReader.nextCommand()).thenReturn(originalCommand, null);
+
+        assertParameterizedCommand(2L, ((char) PclUtil.ESCAPE + "*p1711X").getBytes(), pclCommandReader.nextCommand());
+        assertParameterizedCommand(10L, ((char) PclUtil.ESCAPE + "*p2204Y2.00% (Adj: 12 Mos/Term: 12 Mos)").getBytes(), pclCommandReader.nextCommand());
+        assertNull(pclCommandReader.nextCommand());
+    }
+
+
     @Test
     public void moreThanTwoCommandCompressed() {
         ParameterizedCommand originalCommand = new ParameterizedCommand(2L, new byte[]{PclUtil.ESCAPE, '&', 'l', '1', 'o', '2', 'o', '3', 'O'});
