@@ -156,8 +156,4 @@ public class ByteBufferPclCommandReader implements PclCommandReader {
     public void close() {
 
     }
-
-    public void setPclCommandFactory(PclCommandFactory pclCommandFactory) {
-        this.pclCommandFactory = pclCommandFactory;
-    }
 }

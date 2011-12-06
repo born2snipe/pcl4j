@@ -28,7 +28,7 @@ public class ByteBufferPclCommandReaderTest {
     @Test
     @Ignore("debugging purposes only, should go away")
     public void realFile() throws Exception {
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 1000; i++) {
             long start = System.currentTimeMillis();
             PclCommandReader reader = new UncompressedPclCommandReader(new MappedFilePclCommandReader(new File(Thread.currentThread().getContextClassLoader().getResource("example/sample.pcl").toURI())));
             PclCommand command = null;

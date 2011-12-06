@@ -15,10 +15,9 @@
 package pcl.io;
 
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -26,16 +25,19 @@ import java.util.Queue;
  * Uncompresses parameterized commands into individual commands
  */
 public class UncompressedPclCommandReader implements PclCommandReader {
-    private static final int EOF = -1;
-    private static final int PARAMETER_TO_TERMINATOR_OFFSET = 32;
     private final PclUtil pclUtil = new PclUtil();
     private final Queue<PclCommand> queuedCommands = new LinkedList<PclCommand>();
     private final byte[] commandLeadingBytes = new byte[3];
     private final ByteArrayOutputStream uncompressedCommandData = new ByteArrayOutputStream();
     private final PclCommandReader pclCommandReader;
-    private PclCommandFactory pclCommandFactory = new PclCommandFactory();
+    private final PclCommandFactory pclCommandFactory = new PclCommandFactory();
+    private long commandPosition = -1L;
+    private CommandState state;
 
     public UncompressedPclCommandReader(PclCommandReader pclCommandReader) {
+        if (pclCommandReader == null) {
+            throw new IllegalArgumentException("The given pcl command reader is null");
+        }
         this.pclCommandReader = pclCommandReader;
     }
 
@@ -60,18 +62,16 @@ public class UncompressedPclCommandReader implements PclCommandReader {
     }
 
     private void uncompressCommand(PclCommand compressedCommand) {
-        byte[] compressedBytes = compressedCommand.getBytes();
-        System.arraycopy(compressedBytes, 0, commandLeadingBytes, 0, commandLeadingBytes.length);
-
-        InputStream inputStream = new ByteArrayInputStream(compressedBytes);
+        ByteBuffer compressedData = ByteBuffer.wrap(compressedCommand.getBytes());
+        compressedData.get(commandLeadingBytes);
 
         byte currentByte = -1;
         long position = compressedCommand.getPosition() - 1;
-        long commandPosition = -1L;
+        commandPosition = -1L;
         try {
-            inputStream.skip(commandLeadingBytes.length); // skip the leading bytes
-            CommandState state = CommandState.INIT;
-            while ((currentByte = (byte) inputStream.read()) != EOF) {
+            state = CommandState.INIT;
+            while (compressedData.position() < compressedData.capacity()) {
+                currentByte = compressedData.get();
                 position++;
                 if (state == CommandState.INIT) {
                     commandPosition = position;
@@ -87,52 +87,59 @@ public class UncompressedPclCommandReader implements PclCommandReader {
                     uncompressedCommandData.write(currentByte);
                 }
 
-                if (state == CommandState.BUILD || state == CommandState.BUILD_AND_CAPTURE_REMAINING) {
-                    if (commandsAreQueuedUp()) {
-                        commandPosition += commandLeadingBytes.length;
+                if (shouldBuildCommand()) {
+                    updateCommandPosition();
+                    uncompressedCommandData.write(toTerminator(currentByte));
+
+                    if (shouldCaptureRemainingBytes()) {
+                        uncompressedCommandData.write(captureRemainingBytes(compressedData));
                     }
 
-                    byte terminator = convertParameterToTerminator(currentByte);
-                    uncompressedCommandData.write(terminator);
-
-                    if (state == CommandState.BUILD_AND_CAPTURE_REMAINING) {
-                        uncompressedCommandData.write(captureRemainingBytes(inputStream));
-                    }
-
-                    queuedCommands.add(pclCommandFactory.build(commandPosition, uncompressedCommandData.toByteArray()));
-                    uncompressedCommandData.reset();
-                    state = CommandState.INIT;
+                    queueUpCommand();
+                    resetForNextCommand();
                 }
-            }
-
-            if (uncompressedCommandData.size() > 0) {
-                if (commandsAreQueuedUp()) {
-                    commandPosition += commandLeadingBytes.length;
-                }
-                queuedCommands.add(pclCommandFactory.build(commandPosition, uncompressedCommandData.toByteArray()));
             }
         } catch (IOException e) {
         } finally {
-            uncompressedCommandData.reset();
+            resetForNextCommand();
         }
     }
 
-    private byte[] captureRemainingBytes(InputStream inputStream) throws IOException {
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        byte[] buffer = new byte[1024];
-        int length = -1;
-        while ((length = inputStream.read(buffer)) != -1) {
-            output.write(buffer, 0, length);
-        }
-        return output.toByteArray();
+    private boolean shouldBuildCommand() {
+        return state == CommandState.BUILD || state == CommandState.BUILD_AND_CAPTURE_REMAINING;
     }
 
     private boolean isTerminator(byte currentByte) {
         return pclUtil.isTermination(currentByte);
     }
 
-    private byte convertParameterToTerminator(byte currentByte) {
-        return isTerminator(currentByte) ? currentByte : (byte) (currentByte - PARAMETER_TO_TERMINATOR_OFFSET);
+    private boolean shouldCaptureRemainingBytes() {
+        return state == CommandState.BUILD_AND_CAPTURE_REMAINING;
+    }
+
+    private void updateCommandPosition() {
+        if (commandsAreQueuedUp()) {
+            commandPosition += commandLeadingBytes.length;
+        }
+    }
+
+    private void queueUpCommand() {
+        queuedCommands.add(pclCommandFactory.build(commandPosition, uncompressedCommandData.toByteArray()));
+    }
+
+    private void resetForNextCommand() {
+        uncompressedCommandData.reset();
+        state = CommandState.INIT;
+    }
+
+    private byte[] captureRemainingBytes(ByteBuffer buffer) throws IOException {
+        byte[] data = new byte[buffer.remaining()];
+        buffer.get(data);
+        return data;
+    }
+
+    private byte toTerminator(byte currentByte) {
+        return pclUtil.isTermination(currentByte) ? currentByte : pclUtil.changeParameterToTerminator(currentByte);
     }
 
     private boolean isStartOfNextCommand(byte currentByte) {
@@ -145,10 +152,6 @@ public class UncompressedPclCommandReader implements PclCommandReader {
 
     public void close() {
         pclCommandReader.close();
-    }
-
-    public void setPclCommandFactory(PclCommandFactory pclCommandFactory) {
-        this.pclCommandFactory = pclCommandFactory;
     }
 
     private static enum CommandState {
