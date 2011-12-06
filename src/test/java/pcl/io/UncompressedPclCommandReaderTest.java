@@ -40,37 +40,43 @@ public class UncompressedPclCommandReaderTest {
         ParameterizedCommand originalCommand = new ParameterizedCommand(2L, ((char) PclUtil.ESCAPE + "*p1711x2204Y2.00% (Adj: 12 Mos/Term: 12 Mos)").getBytes());
         when(delegateReader.nextCommand()).thenReturn(originalCommand, null);
 
-        assertParameterizedCommand(2L, ((char) PclUtil.ESCAPE + "*p1711X").getBytes(), pclCommandReader.nextCommand());
-        assertParameterizedCommand(10L, ((char) PclUtil.ESCAPE + "*p2204Y2.00% (Adj: 12 Mos/Term: 12 Mos)").getBytes(), pclCommandReader.nextCommand());
+        PclCommandBuilder builder = new PclCommandBuilder().p('*').g('p');
+
+        assertParameterizedCommand(2L, builder.copy().v("1711").t('X').toBytes(), pclCommandReader.nextCommand());
+        assertParameterizedCommand(10L, builder.copy().v("2204").t('Y').d("2.00% (Adj: 12 Mos/Term: 12 Mos)").toBytes(), pclCommandReader.nextCommand());
         assertNull(pclCommandReader.nextCommand());
     }
 
 
     @Test
     public void moreThanTwoCommandCompressed() {
+        PclCommandBuilder builder = new PclCommandBuilder().p('&').g('l').t('O');
+
         ParameterizedCommand originalCommand = new ParameterizedCommand(2L, new byte[]{PclUtil.ESCAPE, '&', 'l', '1', 'o', '2', 'o', '3', 'O'});
         when(delegateReader.nextCommand()).thenReturn(originalCommand, null);
 
-        assertParameterizedCommand(2L, new byte[]{PclUtil.ESCAPE, '&', 'l', '1', 'O'}, pclCommandReader.nextCommand());
-        assertParameterizedCommand(7L, new byte[]{PclUtil.ESCAPE, '&', 'l', '2', 'O'}, pclCommandReader.nextCommand());
-        assertParameterizedCommand(9L, new byte[]{PclUtil.ESCAPE, '&', 'l', '3', 'O'}, pclCommandReader.nextCommand());
+        assertParameterizedCommand(2L, builder.copy().v("1").toBytes(), pclCommandReader.nextCommand());
+        assertParameterizedCommand(7L, builder.copy().v("2").toBytes(), pclCommandReader.nextCommand());
+        assertParameterizedCommand(9L, builder.copy().v("3").toBytes(), pclCommandReader.nextCommand());
         assertNull(pclCommandReader.nextCommand());
     }
 
 
     @Test
     public void whenACompressedParameterizedCommandIsEncounteredWeShouldCacheTheFollowingCommandForTheNextRead() {
+        PclCommandBuilder builder = new PclCommandBuilder().p('&').g('l').t('O');
+
         ParameterizedCommand originalCommand = new ParameterizedCommand(0L, new byte[]{PclUtil.ESCAPE, '&', 'l', '1', 'o', '2', 'O'});
         when(delegateReader.nextCommand()).thenReturn(originalCommand, null);
 
-        assertParameterizedCommand(0L, new byte[]{PclUtil.ESCAPE, '&', 'l', '1', 'O'}, pclCommandReader.nextCommand());
-        assertParameterizedCommand(5L, new byte[]{PclUtil.ESCAPE, '&', 'l', '2', 'O'}, pclCommandReader.nextCommand());
+        assertParameterizedCommand(0L, builder.copy().v("1").toBytes(), pclCommandReader.nextCommand());
+        assertParameterizedCommand(5L, builder.copy().v("2").toBytes(), pclCommandReader.nextCommand());
         assertNull(pclCommandReader.nextCommand());
     }
 
     @Test
     public void aSingleParameterizedCommandWithBinaryData() {
-        byte[] expectedCommand = {PclUtil.ESCAPE, '&', 'l', '1', '2', 'O', 'D', 'A', 'T', 'A'};
+        byte[] expectedCommand = new PclCommandBuilder().p('&').g('l').v("12").t('O').d("DATA").toBytes();
         ParameterizedCommand originalCommand = new ParameterizedCommand(0L, expectedCommand);
         when(delegateReader.nextCommand()).thenReturn(originalCommand);
 
@@ -79,8 +85,9 @@ public class UncompressedPclCommandReaderTest {
 
     @Test
     public void multipleUncompressedParameterizedCommands() {
-        byte[] expectedCommand = {PclUtil.ESCAPE, '&', 'l', '1', '2', 'O'};
-        byte[] expectedCommand2 = {PclUtil.ESCAPE, '&', 'l', '1', 'A'};
+        PclCommandBuilder builder = new PclCommandBuilder().p('&').g('l');
+        byte[] expectedCommand = builder.copy().v("12").t('O').toBytes();
+        byte[] expectedCommand2 = builder.copy().v("1").t('A').toBytes();
         ParameterizedCommand originalCommand = new ParameterizedCommand(0L, expectedCommand);
         ParameterizedCommand originalCommand2 = new ParameterizedCommand(0L, expectedCommand2);
         when(delegateReader.nextCommand()).thenReturn(originalCommand, originalCommand2);

@@ -48,11 +48,15 @@ public class UncompressedPclCommandReader implements PclCommandReader {
             return queuedCommands.remove();
         }
         PclCommand command = pclCommandReader.nextCommand();
-        if (command != null && command.getBytes().length > 2) {
+        if (command != null && isCompressed(command)) {
             uncompressCommand(command);
             command = queuedCommands.remove();
         }
         return command;
+    }
+
+    private boolean isCompressed(PclCommand command) {
+        return command instanceof ParameterizedCommand;
     }
 
     private void uncompressCommand(PclCommand compressedCommand) {

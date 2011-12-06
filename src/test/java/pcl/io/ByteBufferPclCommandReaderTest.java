@@ -28,16 +28,18 @@ public class ByteBufferPclCommandReaderTest {
     @Test
     @Ignore("debugging purposes only, should go away")
     public void realFile() throws Exception {
-        long start = System.currentTimeMillis();
-        PclCommandReader reader = new EbcdicToAsciiPclCommandReader(new MappedFilePclCommandReader(new File(Thread.currentThread().getContextClassLoader().getResource("example/sample.pcl").toURI())));
-        PclCommand command = null;
-        int count = 0;
-        while ((command = reader.nextCommand()) != null) {
-            int length = command.getBytes().length;
-            System.out.println(count + "# @ " + command.getPosition() + ", length=" + length + "  " + command.toAscii());
-            count++;
+        for (int i = 0; i < 100; i++) {
+            long start = System.currentTimeMillis();
+            PclCommandReader reader = new UncompressedPclCommandReader(new MappedFilePclCommandReader(new File(Thread.currentThread().getContextClassLoader().getResource("example/sample.pcl").toURI())));
+            PclCommand command = null;
+            int count = 0;
+            while ((command = reader.nextCommand()) != null) {
+                int length = command.getBytes().length;
+//            System.out.println(count + "# @ " + command.getPosition() + ", length=" + length + "  " + command.toAscii());
+                count++;
+            }
+            System.out.println((System.currentTimeMillis() - start) + " millis; " + count + " commands");
         }
-        System.out.println((System.currentTimeMillis() - start) + " millis; " + count + " commands");
     }
 
     @Test
