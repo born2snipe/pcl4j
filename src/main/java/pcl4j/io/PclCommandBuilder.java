@@ -27,7 +27,6 @@ public class PclCommandBuilder {
     private boolean validate;
     private byte parameterized, group, terminator;
     private String value;
-    private ByteArrayOutputStream data = new ByteArrayOutputStream();
     private byte[] binaryData;
 
     /**
@@ -142,6 +141,7 @@ public class PclCommandBuilder {
      * @return a byte array representing the command
      */
     public byte[] toBytes() {
+        ByteArrayOutputStream data = new ByteArrayOutputStream();
         data.write(PclUtil.ESCAPE);
         data.write(parameterized);
         data.write(group);

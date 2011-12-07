@@ -15,11 +15,17 @@
 package pcl4j.io;
 
 import java.io.ByteArrayOutputStream;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Utility class for checking for the magic PCL bytes
  */
 public class PclUtil {
+    private static final List<String> BINARY_DATA_COMMANDS = Arrays.asList(
+            "*c#E", ")s#W", "(s#W", "(f#W", "&n#W", "*b#W", "*g#W", "*b#Y", "*b#V", "*v#W", "*l#W", "*o#W", "*m#W", "&p#X"
+    );
+
     public static final int PARAMETERIZED_BYTE_POSITION = 1;
     public static final int GROUP_BYTE_POSITION = 2;
     public static final int VALUE_BYTE_START_POSITION = 3;
@@ -239,6 +245,22 @@ public class PclUtil {
         return output.toByteArray();
     }
 
+    /**
+     * Determines if the given command is expecting binary data to follow it
+     *
+     * @param commandBytes - the bytes that make up the command
+     * @return true - expecting binary data
+     *         false - is not expecting binary data
+     */
+    public boolean isCommandExpectingData(byte[] commandBytes) {
+        StringBuilder pattern = new StringBuilder();
+        pattern.append((char) commandBytes[PARAMETERIZED_BYTE_POSITION]);
+        pattern.append((char) commandBytes[GROUP_BYTE_POSITION]);
+        pattern.append("#");
+        pattern.append((char) getTerminatorByte(commandBytes));
+        return BINARY_DATA_COMMANDS.contains(pattern.toString());
+    }
+
     private void requiresParameterizedCommand(PclCommand command) {
         if (is2ByteCommand(command)) {
             throw new IllegalArgumentException("Parameterized command required, but received a 2 byte command");
@@ -247,5 +269,9 @@ public class PclUtil {
 
     private boolean is2ByteCommand(PclCommand command) {
         return command.getBytes().length == 2;
+    }
+
+    private byte getTerminatorByte(byte[] commandBytes) {
+        return commandBytes[commandBytes.length - 1];
     }
 }

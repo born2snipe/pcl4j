@@ -29,7 +29,7 @@ public class CompressedPclCommandWriter implements PclCommandWriter {
     public void write(PclCommand command) throws PclCommandWriterException {
         if (lastParameterizedCommand == null) {
             lastParameterizedCommand = command;
-        } else if (pclCommandCompressor.canBeCompressed(command, lastParameterizedCommand)) {
+        } else if (pclCommandCompressor.canBeCompressed(lastParameterizedCommand, command)) {
             lastParameterizedCommand = pclCommandCompressor.compress(lastParameterizedCommand, command);
         } else {
             pclCommandWriter.write(lastParameterizedCommand);

@@ -32,6 +32,82 @@ public class PclUtilTest {
     }
 
     @Test
+    public void isCommandExpectingData_commandNotExpectingData() {
+        assertFalse(util.isCommandExpectingData(new PclCommandBuilder().p('*').g('c').v("5").t('S').toBytes()));
+    }
+
+    @Test
+    public void isCommandExpectingData_AsciiCodeDecimal() {
+        assertTrue(util.isCommandExpectingData(new PclCommandBuilder().p('*').g('c').v("4").t('E').toBytes()));
+    }
+
+    @Test
+    public void isCommandExpectingData_CreateFontHeaderOfBytes() {
+        assertTrue(util.isCommandExpectingData(new PclCommandBuilder().p(')').g('s').v("4").t('W').toBytes()));
+    }
+
+    @Test
+    public void isCommandExpectingData_DownloadCharacterOfBytes() {
+        assertTrue(util.isCommandExpectingData(new PclCommandBuilder().p('(').g('s').v("4").t('W').toBytes()));
+    }
+
+    @Test
+    public void isCommandExpectingData_DefineSymbolSetCharacters() {
+        assertTrue(util.isCommandExpectingData(new PclCommandBuilder().p('(').g('f').v("4").t('W').toBytes()));
+    }
+
+    @Test
+    public void isCommandExpectingData_AlphanumericID() {
+        assertTrue(util.isCommandExpectingData(new PclCommandBuilder().p('&').g('n').v("4").t('W').toBytes()));
+    }
+
+    @Test
+    public void isCommandExpectingData_GraphicsDataBytes() {
+        assertTrue(util.isCommandExpectingData(new PclCommandBuilder().p('*').g('b').v("4").t('W').toBytes()));
+    }
+
+    @Test
+    public void isCommandExpectingData_ConfigureRasterDataBytes() {
+        assertTrue(util.isCommandExpectingData(new PclCommandBuilder().p('*').g('g').v("4").t('W').toBytes()));
+    }
+
+    @Test
+    public void isCommandExpectingData_moveVerticallyRasterLines() {
+        assertTrue(util.isCommandExpectingData(new PclCommandBuilder().p('*').g('b').v("4").t('Y').toBytes()));
+    }
+
+    @Test
+    public void isCommandExpectingData_colourDataBytes() {
+        assertTrue(util.isCommandExpectingData(new PclCommandBuilder().p('*').g('b').v("4").t('V').toBytes()));
+    }
+
+    @Test
+    public void isCommandExpectingData_configureImageDataBytes() {
+        assertTrue(util.isCommandExpectingData(new PclCommandBuilder().p('*').g('v').v("4").t('W').toBytes()));
+    }
+
+    @Test
+    public void isCommandExpectingData_ColourLookupTableBytes() {
+        assertTrue(util.isCommandExpectingData(new PclCommandBuilder().p('*').g('l').v("4").t('W').toBytes()));
+    }
+
+    @Test
+    public void isCommandExpectingData_ColourTreatment() {
+        assertTrue(util.isCommandExpectingData(new PclCommandBuilder().p('*').g('o').v("4").t('W').toBytes()));
+    }
+
+    @Test
+    public void isCommandExpectingData_downloadDitherMatrixBytes() {
+        assertTrue(util.isCommandExpectingData(new PclCommandBuilder().p('*').g('m').v("4").t('W').toBytes()));
+    }
+
+    @Test
+    public void isCommandExpectingData_TransparentPrintDataBytes() {
+        assertTrue(util.isCommandExpectingData(new PclCommandBuilder().p('&').g('p').v("4").t('X').toBytes()));
+    }
+
+
+    @Test
     public void getValue_shouldReturnTheValueOfTheCommand() {
         final ParameterizedCommand command = new ParameterizedCommand(new byte[]{
                 PclUtil.ESCAPE,

@@ -19,12 +19,16 @@ import org.junit.Test;
 
 import java.util.Arrays;
 
-import static junit.framework.Assert.assertSame;
-import static junit.framework.Assert.assertTrue;
+import static junit.framework.Assert.*;
 import static pcl4j.io.AssertPcl.assertParameterizedCommand;
 import static pcl4j.io.PclUtil.*;
 
 public class PclCommandBuilderTest {
+    @Test
+    public void shouldBeAbleToCallToBytesMultipleTimesAndReturnTheSameResult() {
+        PclCommandBuilder builder = new PclCommandBuilder().v("10");
+        assertTrue(Arrays.equals(builder.toBytes(), builder.toBytes()));
+    }
 
     @Test
     public void shouldBeAbleToMakeCopiesOfABuilderAndTheChildShouldNotAffectTheParent() {

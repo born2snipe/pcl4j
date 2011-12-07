@@ -31,43 +31,45 @@ public class PclCommandCompressorTest {
 
     @Test
     public void canBeCompressed_bothCommandAreParameterizedCommandWithMatchingParameterizedAndGroupBytes() {
-        ParameterizedCommand command = new ParameterizedCommand(new byte[]{
-                ESCAPE, LOWEST_PARAMETERIZED_BYTE, LOWEST_GROUP_BYTE, '1', LOWEST_TERMINATION_BYTE
-        });
+        PclCommand command = new PclCommandBuilder().p(LOWEST_PARAMETERIZED_BYTE).g(LOWEST_GROUP_BYTE).v("1").t(LOWEST_TERMINATION_BYTE).toCommand();
         assertTrue(compressor.canBeCompressed(command, command));
     }
 
     @Test
     public void canBeCompressed_bothCommandAreParameterizedCommandButWithDifferentParameterized() {
-        ParameterizedCommand command = new ParameterizedCommand(new byte[]{
-                ESCAPE, LOWEST_PARAMETERIZED_BYTE, LOWEST_GROUP_BYTE, '1', LOWEST_TERMINATION_BYTE
-        });
-        ParameterizedCommand otherCommand = new ParameterizedCommand(new byte[]{
-                ESCAPE, HIGHEST_PARAMETERIZED_BYTE, LOWEST_GROUP_BYTE, '1', LOWEST_TERMINATION_BYTE
-        });
+        PclCommand command = new PclCommandBuilder().p(LOWEST_PARAMETERIZED_BYTE).g(LOWEST_GROUP_BYTE).v("1").t(LOWEST_TERMINATION_BYTE).toCommand();
+        PclCommand otherCommand = new PclCommandBuilder().p(HIGHEST_PARAMETERIZED_BYTE).g(LOWEST_GROUP_BYTE).v("1").t(LOWEST_TERMINATION_BYTE).toCommand();
         assertFalse(compressor.canBeCompressed(command, otherCommand));
     }
 
     @Test
     public void canBeCompressed_bothCommandAreParameterizedCommandButWithDifferentGroups() {
-        ParameterizedCommand command = new ParameterizedCommand(new byte[]{
-                ESCAPE, LOWEST_PARAMETERIZED_BYTE, LOWEST_GROUP_BYTE, '1', LOWEST_TERMINATION_BYTE
-        });
-        ParameterizedCommand otherCommand = new ParameterizedCommand(new byte[]{
-                ESCAPE, LOWEST_PARAMETERIZED_BYTE, HIGHEST_GROUP_BYTE, '1', LOWEST_TERMINATION_BYTE
-        });
+        PclCommandBuilder builder = new PclCommandBuilder().p(LOWEST_PARAMETERIZED_BYTE).v("1").t(LOWEST_TERMINATION_BYTE);
+
+        PclCommand command = builder.copy().g(LOWEST_GROUP_BYTE).toCommand();
+        PclCommand otherCommand = builder.copy().g(HIGHEST_GROUP_BYTE).toCommand();
+
         assertFalse(compressor.canBeCompressed(command, otherCommand));
     }
 
     @Test
     public void canBeCompressed_bothCommandAreParameterizedButFirstCommandHasBinaryData() {
-        ParameterizedCommand command = new ParameterizedCommand(new byte[]{
-                ESCAPE, LOWEST_PARAMETERIZED_BYTE, LOWEST_GROUP_BYTE, '1', LOWEST_TERMINATION_BYTE, '1', '2'
-        });
-        ParameterizedCommand otherCommand = new ParameterizedCommand(new byte[]{
-                ESCAPE, LOWEST_PARAMETERIZED_BYTE, LOWEST_GROUP_BYTE, '1', LOWEST_TERMINATION_BYTE
-        });
+        PclCommandBuilder builder = new PclCommandBuilder().p(LOWEST_PARAMETERIZED_BYTE).g(LOWEST_GROUP_BYTE).v("1").t(LOWEST_TERMINATION_BYTE);
+
+        PclCommand command = builder.copy().d("12").toCommand();
+        PclCommand otherCommand = builder.toCommand();
+
         assertFalse(compressor.canBeCompressed(command, otherCommand));
+    }
+
+    @Test
+    public void canBeCompressed_firstCommandIsATextCommand() {
+        assertFalse(compressor.canBeCompressed(new TextCommand("X".getBytes()), new ParameterizedCommand(new byte[3])));
+    }
+
+    @Test
+    public void canBeCompressed_secondCommandIsATextCommand() {
+        assertFalse(compressor.canBeCompressed(new ParameterizedCommand(new byte[3]), new TextCommand("X".getBytes())));
     }
 
     @Test
@@ -92,9 +94,7 @@ public class PclCommandCompressorTest {
 
     @Test
     public void compress_shouldReturnACompressedVersionOfTheTwoCommands() {
-        ParameterizedCommand command = new ParameterizedCommand(new byte[]{
-                ESCAPE, LOWEST_PARAMETERIZED_BYTE, LOWEST_GROUP_BYTE, '1', LOWEST_TERMINATION_BYTE
-        });
+        PclCommand command = new PclCommandBuilder().p(LOWEST_PARAMETERIZED_BYTE).g(LOWEST_GROUP_BYTE).v("1").t(LOWEST_TERMINATION_BYTE).toCommand();
 
         ParameterizedCommand expectedCompressedCommand = new ParameterizedCommand(new byte[]{
                 ESCAPE, LOWEST_PARAMETERIZED_BYTE, LOWEST_GROUP_BYTE, '1', LOWEST_PARAMETER_BYTE, '1', LOWEST_TERMINATION_BYTE
@@ -108,12 +108,10 @@ public class PclCommandCompressorTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void compress_shouldBlowUpIfTheCommandsCanNotBeCompressed() {
-        ParameterizedCommand command = new ParameterizedCommand(new byte[]{
-                ESCAPE, LOWEST_PARAMETERIZED_BYTE, LOWEST_GROUP_BYTE, '1', LOWEST_TERMINATION_BYTE
-        });
-        ParameterizedCommand otherCommand = new ParameterizedCommand(new byte[]{
-                ESCAPE, LOWEST_PARAMETERIZED_BYTE, HIGHEST_GROUP_BYTE, '1', LOWEST_TERMINATION_BYTE
-        });
+        PclCommandBuilder builder = new PclCommandBuilder().p(LOWEST_PARAMETERIZED_BYTE).v("1").t(LOWEST_TERMINATION_BYTE);
+
+        PclCommand command = builder.copy().g(LOWEST_GROUP_BYTE).toCommand();
+        PclCommand otherCommand = builder.copy().g(HIGHEST_GROUP_BYTE).toCommand();
 
         compressor.compress(command, otherCommand);
     }

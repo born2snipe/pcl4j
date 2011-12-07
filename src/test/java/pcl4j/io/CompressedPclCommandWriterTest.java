@@ -55,7 +55,7 @@ public class CompressedPclCommandWriterTest {
         ParameterizedCommand otherCommand = new ParameterizedCommand(new byte[4]);
         ParameterizedCommand compressedCommand = new ParameterizedCommand(new byte[5]);
 
-        when(commandCompressor.canBeCompressed(command, otherCommand)).thenReturn(true);
+        when(commandCompressor.canBeCompressed(otherCommand, command)).thenReturn(true);
         when(commandCompressor.compress(otherCommand, command)).thenReturn(compressedCommand);
 
         writer.write(otherCommand);

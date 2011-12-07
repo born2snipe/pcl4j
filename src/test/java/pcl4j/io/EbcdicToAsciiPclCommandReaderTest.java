@@ -18,8 +18,7 @@ package pcl4j.io;
 import org.junit.Before;
 import org.junit.Test;
 
-import static junit.framework.Assert.assertNull;
-import static junit.framework.Assert.assertSame;
+import static junit.framework.Assert.*;
 import static org.mockito.Mockito.*;
 
 public class EbcdicToAsciiPclCommandReaderTest {
@@ -34,14 +33,9 @@ public class EbcdicToAsciiPclCommandReaderTest {
     }
 
     @Test
-    public void shouldConvertBinaryDataIfTheTerminatorIsNotA_W() {
-        ParameterizedCommand originalCommand = new ParameterizedCommand(2L, new byte[]{
-                PclUtil.ESCAPE, PclUtil.LOWEST_PARAMETERIZED_BYTE, PclUtil.LOWEST_GROUP_BYTE, '0', 'X', (byte) 241, (byte) 242, (byte) 243
-        });
-
-        ParameterizedCommand expectedCommand = new ParameterizedCommand(2L, new byte[]{
-                PclUtil.ESCAPE, PclUtil.LOWEST_PARAMETERIZED_BYTE, PclUtil.LOWEST_GROUP_BYTE, '0', 'X', '1', '2', '3'
-        });
+    public void shouldConvertDataIfTheCommandIsText() {
+        PclCommand originalCommand = new TextCommand(2L, new byte[]{(byte) 241, (byte) 242, (byte) 243});
+        PclCommand expectedCommand = new TextCommand(2L, new byte[]{'1', '2', '3'});
 
         when(delegate.nextCommand()).thenReturn(originalCommand);
 
@@ -49,7 +43,7 @@ public class EbcdicToAsciiPclCommandReaderTest {
     }
 
     @Test
-    public void shouldNotConvertAnyBinaryDataIfTheTerminatorIsA_W() {
+    public void shouldNotConvertAnyParameterizedCommand() {
         ParameterizedCommand originalCommand = new ParameterizedCommand(0L, new byte[]{
                 PclUtil.ESCAPE, PclUtil.LOWEST_PARAMETERIZED_BYTE, PclUtil.LOWEST_GROUP_BYTE, '0', 'W', 1, 2, 3
         });

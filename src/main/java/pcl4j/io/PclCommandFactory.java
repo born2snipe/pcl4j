@@ -18,6 +18,8 @@ package pcl4j.io;
  * A factory that builds a PclCommand object
  */
 public class PclCommandFactory {
+    private static final PclUtil UTIL = new PclUtil();
+
     /**
      * Build a PclCommand from the given bytes and position
      *
@@ -26,11 +28,15 @@ public class PclCommandFactory {
      * @return a PclCommand object
      */
     public PclCommand build(long position, byte[] commandData) {
-        if (commandData.length == 2) {
-            return new TwoByteCommand(position, commandData);
+        if (UTIL.isEscape(commandData[0])) {
+            if (commandData.length == 2) {
+                return new TwoByteCommand(position, commandData);
+            }
+
+            return new ParameterizedCommand(position, commandData);
         }
 
-        return new ParameterizedCommand(position, commandData);
+        return new TextCommand(position, commandData);
     }
 
 }

@@ -30,6 +30,11 @@ public class AssertPcl {
         assertCommand(expectedPosition, expectedCommandBytes, command);
     }
 
+    public static void assertTextCommand(long expectedPosition, byte[] expectedCommandBytes, PclCommand command) {
+        assertEquals("not the right kind of command", TextCommand.class, command.getClass());
+        assertCommand(expectedPosition, expectedCommandBytes, command);
+    }
+
     public static void assertCommand(long expectedPosition, byte[] expectedBytes, PclCommand actualCommand) {
         assertNotNull("The command should NOT be null", actualCommand);
         byte[] actualBytes = actualCommand.getBytes();

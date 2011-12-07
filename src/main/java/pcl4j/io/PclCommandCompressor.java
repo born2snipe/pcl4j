@@ -32,32 +32,32 @@ public class PclCommandCompressor {
     /**
      * Compresses the 2 given commands together
      *
-     * @param command      - parameterized command
-     * @param otherCommand - parameterized command
+     * @param commandToAppendTo - parameterized command
+     * @param commandToAppend   - parameterized command
      * @return the compressed version of the two given commands
      * @throws IllegalArgumentException when given a 2 byte command
      */
-    public PclCommand compress(PclCommand command, PclCommand otherCommand) throws IllegalArgumentException {
-        if (!canBeCompressed(command, otherCommand)) {
+    public PclCommand compress(PclCommand commandToAppendTo, PclCommand commandToAppend) throws IllegalArgumentException {
+        if (!canBeCompressed(commandToAppendTo, commandToAppend)) {
             throw new IllegalArgumentException("These given commands can not be compressed together! Did you forget to check if they could be compressed before trying to compress them?\n" +
-                    "\tcommand=[" + command + "]\n" +
-                    "\totherCommmand=[" + otherCommand + "]\n");
+                    "\tcommand=[" + commandToAppendTo + "]\n" +
+                    "\totherCommmand=[" + commandToAppend + "]\n");
         }
 
-        byte[] commandToAppendTo = command.getBytes();
-        byte[] commandToAppend = otherCommand.getBytes();
-        ByteArrayOutputStream compressedBytes = new ByteArrayOutputStream(commandToAppend.length + commandToAppendTo.length);
+        byte[] commandToAppendToBytes = commandToAppendTo.getBytes();
+        byte[] commandToAppendBytes = commandToAppend.getBytes();
+        ByteArrayOutputStream compressedBytes = new ByteArrayOutputStream(commandToAppendBytes.length + commandToAppendToBytes.length);
 
-        for (int i = 0; i < commandToAppendTo.length; i++) {
-            byte currentByte = commandToAppendTo[i];
+        for (int i = 0; i < commandToAppendToBytes.length; i++) {
+            byte currentByte = commandToAppendToBytes[i];
             if (pclUtil.isTermination(currentByte)) {
                 currentByte = pclUtil.changeTerminatorToParameter(currentByte);
             }
             compressedBytes.write(currentByte);
         }
 
-        for (int i = PclUtil.VALUE_BYTE_START_POSITION; i < commandToAppend.length; i++) {
-            compressedBytes.write(commandToAppend[i]);
+        for (int i = PclUtil.VALUE_BYTE_START_POSITION; i < commandToAppendBytes.length; i++) {
+            compressedBytes.write(commandToAppendBytes[i]);
         }
 
         return new ParameterizedCommand(compressedBytes.toByteArray());
@@ -66,27 +66,31 @@ public class PclCommandCompressor {
     /**
      * Determines if the 2 given commands can be compressed together
      *
-     * @param command      - pcl command
-     * @param otherCommand - pcl command
+     * @param commandToAppendTo - pcl command
+     * @param commandToAppend   - pcl command
      * @return true - they can be compressed together<br/>
      *         false - they can not be compressed together
      */
-    public boolean canBeCompressed(PclCommand command, PclCommand otherCommand) {
-        if (isEitherCommandNull(command, otherCommand)) {
+    public boolean canBeCompressed(PclCommand commandToAppendTo, PclCommand commandToAppend) {
+        if (isEitherCommandNull(commandToAppendTo, commandToAppend)) {
+            return false;
+        } else if (isEitherCommandA2ByteCommand(commandToAppendTo, commandToAppend)) {
+            return false;
+        } else if (isEitherCommandATextCommand(commandToAppendTo, commandToAppend)) {
             return false;
         }
 
-        if (isEitherCommandA2ByteCommand(command, otherCommand)) {
-            return false;
-        }
-
-        if (parameterizedBytesDoNotMatch(command, otherCommand)
-                || groupBytesDoNotMatch(command, otherCommand)
-                || pclUtil.hasBinaryData(command)) {
+        if (parameterizedBytesDoNotMatch(commandToAppendTo, commandToAppend)
+                || groupBytesDoNotMatch(commandToAppendTo, commandToAppend)
+                || pclUtil.hasBinaryData(commandToAppendTo)) {
             return false;
         }
 
         return true;
+    }
+
+    private boolean isEitherCommandATextCommand(PclCommand commandToAppendTo, PclCommand commandToAppend) {
+        return commandToAppendTo instanceof TextCommand || commandToAppend instanceof TextCommand;
     }
 
     private boolean isEitherCommandNull(PclCommand command, PclCommand otherCommand) {

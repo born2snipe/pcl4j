@@ -14,7 +14,6 @@
 
 package pcl4j.io;
 
-import java.io.ByteArrayOutputStream;
 import java.io.UnsupportedEncodingException;
 
 /**
@@ -23,7 +22,6 @@ import java.io.UnsupportedEncodingException;
 public class EbcdicToAsciiPclCommandReader implements PclCommandReader {
     private final PclCommandReader pclCommandReader;
     private PclCommandFactory pclCommandFactory = new PclCommandFactory();
-    private PclUtil pclUtil = new PclUtil();
 
     public EbcdicToAsciiPclCommandReader(PclCommandReader pclCommandReader) {
         this.pclCommandReader = pclCommandReader;
@@ -39,37 +37,16 @@ public class EbcdicToAsciiPclCommandReader implements PclCommandReader {
     public PclCommand nextCommand() throws PclCommandReaderException {
         PclCommand originalCommand = pclCommandReader.nextCommand();
         if (originalCommand != null) {
-            if (pclUtil.hasBinaryData(originalCommand) && isTextData(originalCommand)) {
-                byte[] data = originalCommand.getBytes();
-                boolean terminationByteFound = false;
-                byte[] tempCommand = new byte[data.length];
-                ByteArrayOutputStream ebcdicBytes = new ByteArrayOutputStream();
-                int binaryDataStartingPosition = -1;
-
-                for (int i = 0; i < data.length; i++) {
-                    if (pclUtil.isTermination(data[i])) {
-                        terminationByteFound = true;
-                        binaryDataStartingPosition = i + 1;
-                    }
-
-                    if (!pclUtil.isTermination(data[i]) && terminationByteFound) {
-                        ebcdicBytes.write(data[i]);
-                    } else {
-                        tempCommand[i] = data[i];
-                    }
-                }
-
-                byte[] asciiBytes = convertToAscii(ebcdicBytes.toByteArray());
-                try {
-                    System.arraycopy(asciiBytes, 0, tempCommand, binaryDataStartingPosition, asciiBytes.length);
-                } catch (ArrayIndexOutOfBoundsException e) {
-                    throw e;
-                }
-
-                originalCommand = pclCommandFactory.build(originalCommand.getPosition(), tempCommand);
+            if (isTextData(originalCommand)) {
+                byte[] asciiBytes = convertToAscii(originalCommand.getBytes());
+                originalCommand = pclCommandFactory.build(originalCommand.getPosition(), asciiBytes);
             }
         }
         return originalCommand;
+    }
+
+    public void close() {
+        pclCommandReader.close();
     }
 
     private byte[] convertToAscii(byte[] ebcdicBytes) {
@@ -82,14 +59,6 @@ public class EbcdicToAsciiPclCommandReader implements PclCommandReader {
 
 
     private boolean isTextData(PclCommand originalCommand) {
-        return pclUtil.getTerminatorByte(originalCommand) != 'W';
-    }
-
-    public void close() {
-        pclCommandReader.close();
-    }
-
-    public void setPclCommandFactory(PclCommandFactory pclCommandFactory) {
-        this.pclCommandFactory = pclCommandFactory;
+        return originalCommand instanceof TextCommand;
     }
 }

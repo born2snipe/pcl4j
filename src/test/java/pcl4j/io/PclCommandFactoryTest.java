@@ -30,7 +30,7 @@ public class PclCommandFactoryTest {
 
     @Test
     public void shouldBuildAParameterizedCommandWhenGivenMoreThan2Bytes() {
-        byte[] data = {1, 2, 3};
+        byte[] data = {PclUtil.ESCAPE, 1, 2, 3};
 
         PclCommand command = factory.build(3L, data);
 
@@ -41,13 +41,24 @@ public class PclCommandFactoryTest {
 
     @Test
     public void shouldBuildA2ByteCommandWhenGivenOnly2Bytes() {
-        byte[] data = {1, 2};
+        byte[] data = {PclUtil.ESCAPE, 1};
 
         PclCommand command = factory.build(2L, data);
 
         assertTrue(command instanceof TwoByteCommand);
         assertSame(data, command.getBytes());
         assertEquals(2L, command.getPosition());
+    }
+
+    @Test
+    public void shouldBuildATextCommand() {
+        byte[] data = {1};
+
+        PclCommand command = factory.build(1L, data);
+
+        assertTrue(command instanceof TextCommand);
+        assertSame(data, command.getBytes());
+        assertEquals(1L, command.getPosition());
     }
 
 }
