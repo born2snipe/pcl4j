@@ -30,16 +30,36 @@ public class ByteBufferPclCommandReaderTest {
     public void realFile() throws Exception {
         for (int i = 0; i < 1000; i++) {
             long start = System.currentTimeMillis();
-            PclCommandReader reader = new UncompressedPclCommandReader(new MappedFilePclCommandReader(new File(Thread.currentThread().getContextClassLoader().getResource("example/sample.pcl").toURI())));
+            PclCommandReader reader = new MappedFilePclCommandReader(new File(Thread.currentThread().getContextClassLoader().getResource("example/sample.pcl").toURI()));
             PclCommand command = null;
             int count = 0;
             while ((command = reader.nextCommand()) != null) {
                 int length = command.getBytes().length;
-//            System.out.println(count + "# @ " + command.getPosition() + ", length=" + length + "  " + command.toAscii());
+//            System.out.println("command = " + command);
                 count++;
             }
             System.out.println((System.currentTimeMillis() - start) + " millis; " + count + " commands");
         }
+    }
+
+    @Test
+    public void shouldOnlyCaptureTheNumberBytesSpecifiedByTheValueOfTheCommand_DecimalValue() {
+        PclCommandBuilder builder = new PclCommandBuilder().p('*').g('c').v("4.0").t('E').d("data");
+
+        ByteBufferPclCommandReader reader = createReader(ByteArrayUtil.concat(builder.toBytes(), "12".getBytes()));
+
+        assertParameterizedCommand(0L, builder.toBytes(), reader.nextCommand());
+        assertTextCommand(11L, "12".getBytes(), reader.nextCommand());
+    }
+
+    @Test
+    public void shouldOnlyCaptureTheNumberBytesSpecifiedByTheValueOfTheCommand_IntValue() {
+        PclCommandBuilder builder = new PclCommandBuilder().p('*').g('c').v("4").t('E').d("data");
+
+        ByteBufferPclCommandReader reader = createReader(ByteArrayUtil.concat(builder.toBytes(), "12".getBytes()));
+
+        assertParameterizedCommand(0L, builder.toBytes(), reader.nextCommand());
+        assertTextCommand(9L, "12".getBytes(), reader.nextCommand());
     }
 
     @Test

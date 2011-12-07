@@ -228,9 +228,19 @@ public class PclUtil {
      */
     public byte[] getValue(PclCommand command) {
         requiresParameterizedCommand(command);
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        byte[] commandBytes = command.getBytes();
+        return getValue(command.getBytes());
+    }
 
+    /**
+     * Captures the value bytes of the given command bytes
+     * <p/>
+     * Defaults the value to zero if a 'value' is not found in the command
+     *
+     * @param commandBytes - the command to capture the value from
+     * @return a byte array containing all the value bytes
+     */
+    public byte[] getValue(byte[] commandBytes) {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
         if (isTermination(commandBytes[VALUE_BYTE_START_POSITION])) {
             output.write('0');
         } else {
@@ -238,8 +248,11 @@ public class PclUtil {
                 byte currentByte = commandBytes[i];
                 if (isTermination(currentByte)) {
                     break;
+                } else if (isParameterCharacter(currentByte)) {
+                    output.reset();
+                } else {
+                    output.write(currentByte);
                 }
-                output.write(currentByte);
             }
         }
         return output.toByteArray();
@@ -262,7 +275,7 @@ public class PclUtil {
     }
 
     private void requiresParameterizedCommand(PclCommand command) {
-        if (is2ByteCommand(command)) {
+        if (!(command instanceof ParameterizedCommand)) {
             throw new IllegalArgumentException("Parameterized command required, but received a 2 byte command");
         }
     }

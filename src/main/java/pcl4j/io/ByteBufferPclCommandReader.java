@@ -16,8 +16,6 @@ package pcl4j.io;
 
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
 /**
@@ -94,12 +92,13 @@ public class ByteBufferPclCommandReader implements PclCommandReader {
         return command;
     }
 
-    private void captureBinaryData(OutputStream commandData) {
-        while (isNotEOF()) {
-            try {
-                commandData.write(readNextByte());
-            } catch (IOException e) {
-            }
+    private void captureBinaryData(ByteArrayOutputStream commandData) {
+        String valueAsString = new String(pclUtil.getValue(commandData.toByteArray())).replaceAll("\\.[0-9]*", "");
+        Integer numberOfBytesToRead = Integer.valueOf(valueAsString);
+        int count = 0;
+        while (isNotEOF() && count < numberOfBytesToRead) {
+            commandData.write(readNextByte());
+            count++;
         }
     }
 

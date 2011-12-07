@@ -108,7 +108,7 @@ public class PclUtilTest {
 
 
     @Test
-    public void getValue_shouldReturnTheValueOfTheCommand() {
+    public void getValue_shouldReturnTheValueOfTheCommand_givenCommand() {
         final ParameterizedCommand command = new ParameterizedCommand(new byte[]{
                 PclUtil.ESCAPE,
                 PclUtil.LOWEST_PARAMETERIZED_BYTE,
@@ -118,6 +118,26 @@ public class PclUtilTest {
         });
 
         assertBytes(new byte[]{'1', '2', '3'}, util.getValue(command));
+    }
+
+    @Test
+    public void getValue_shouldReturnTheValueOfTheCommand_givenBytes() {
+        byte[] command = new PclCommandBuilder().p(LOWEST_PARAMETERIZED_BYTE).g(LOWEST_GROUP_BYTE).v("123").t(LOWEST_TERMINATION_BYTE).toBytes();
+        assertBytes(new byte[]{'1', '2', '3'}, util.getValue(command));
+    }
+
+    @Test
+    public void getValue_shouldReturnTheValueOfTheCommandOfTheLastCommandIfThereAreCommandsCompressedTogehter_givenBytes() {
+        byte[] command = {
+                PclUtil.ESCAPE,
+                PclUtil.LOWEST_PARAMETERIZED_BYTE,
+                PclUtil.LOWEST_GROUP_BYTE,
+                '1', '2', '3',
+                PclUtil.LOWEST_PARAMETER_BYTE,
+                '5',
+                PclUtil.LOWEST_TERMINATION_BYTE
+        };
+        assertBytes(new byte[]{'5'}, util.getValue(command));
     }
 
     @Test
@@ -135,6 +155,11 @@ public class PclUtilTest {
     @Test(expected = IllegalArgumentException.class)
     public void getValue_shouldBlowUpIfTheCommandIsA2ByteCommand() {
         util.getValue(new TwoByteCommand(new byte[0]));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void getValue_shouldBlowUpIfTheCommandIsATextCommand() {
+        util.getValue(new TextCommand(new byte[0]));
     }
 
     @Test
