@@ -106,6 +106,18 @@ public class PclUtilTest {
         assertTrue(util.isCommandExpectingData(new PclCommandBuilder().p('&').g('p').v("4").t('X').toBytes()));
     }
 
+    @Test
+    public void isCommandExpectingData_shouldBePerformant() {
+        byte[] commandBytes = new PclCommandBuilder().p('&').g('p').v("4").t('X').toBytes();
+
+        long start = System.currentTimeMillis();
+        for (int i = 0; i < 1000000; i++)
+            assertTrue(util.isCommandExpectingData(commandBytes));
+
+        long elapsed = System.currentTimeMillis() - start;
+        assertTrue("it took longer than expected to look up if a command expect binary data", elapsed < 500);
+    }
+
 
     @Test
     public void getValue_shouldReturnTheValueOfTheCommand_givenCommand() {

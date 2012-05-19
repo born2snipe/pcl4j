@@ -16,15 +16,13 @@ package pcl4j.io;
 
 import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
-import java.util.List;
 
 /**
  * Utility class for checking for the magic PCL bytes
  */
 public class PclUtil {
-    private static final List<String> BINARY_DATA_COMMANDS = Arrays.asList(
-            "*c#E", ")s#W", "(s#W", "(f#W", "&n#W", "*b#W", "*g#W", "*b#Y", "*b#V", "*v#W", "*l#W", "*o#W", "*m#W", "&p#X"
-    );
+    private static final String[] BINARY_DATA_COMMANDS = {"*c#E", ")s#W", "(s#W", "(f#W", "&n#W", "*b#W", "*g#W", "*b#Y", "*b#V", "*v#W", "*l#W", "*o#W", "*m#W", "&p#X"};
+    private static final int[] BINARY_DATA_COMMANDS_HASHES = initializeBinaryDataHashes();
 
     public static final int PARAMETERIZED_BYTE_POSITION = 1;
     public static final int GROUP_BYTE_POSITION = 2;
@@ -246,7 +244,7 @@ public class PclUtil {
         } else {
             for (int i = VALUE_BYTE_START_POSITION; i < commandBytes.length; i++) {
                 byte currentByte = commandBytes[i];
-                if (isTermination(currentByte)) {
+                if (currentByte == getTerminatorByte(commandBytes)) {
                     break;
                 } else if (isParameterCharacter(currentByte)) {
                     output.reset();
@@ -266,12 +264,13 @@ public class PclUtil {
      *         false - is not expecting binary data
      */
     public boolean isCommandExpectingData(byte[] commandBytes) {
-        StringBuilder pattern = new StringBuilder();
-        pattern.append((char) commandBytes[PARAMETERIZED_BYTE_POSITION]);
-        pattern.append((char) commandBytes[GROUP_BYTE_POSITION]);
-        pattern.append("#");
-        pattern.append((char) getTerminatorByte(commandBytes));
-        return BINARY_DATA_COMMANDS.contains(pattern.toString());
+        byte[] commandId = {
+                commandBytes[PARAMETERIZED_BYTE_POSITION],
+                commandBytes[GROUP_BYTE_POSITION],
+                '#',
+                (byte) Character.toUpperCase((char) getTerminatorByte(commandBytes))
+        };
+        return Arrays.binarySearch(BINARY_DATA_COMMANDS_HASHES, Arrays.hashCode(commandId)) > -1;
     }
 
     private void requiresParameterizedCommand(PclCommand command) {
@@ -286,5 +285,14 @@ public class PclUtil {
 
     private byte getTerminatorByte(byte[] commandBytes) {
         return commandBytes[commandBytes.length - 1];
+    }
+
+    private static int[] initializeBinaryDataHashes() {
+        int[] hashes = new int[BINARY_DATA_COMMANDS.length];
+        for (int i = 0; i < hashes.length; i++) {
+            hashes[i] = Arrays.hashCode(BINARY_DATA_COMMANDS[i].getBytes());
+        }
+        Arrays.sort(hashes);
+        return hashes;
     }
 }

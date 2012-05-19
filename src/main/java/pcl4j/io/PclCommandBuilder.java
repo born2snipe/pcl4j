@@ -132,6 +132,7 @@ public class PclCommandBuilder {
         child.value = value;
         child.terminator = terminator;
         child.binaryData = binaryData;
+        child.validate = validate;
         return child;
     }
 

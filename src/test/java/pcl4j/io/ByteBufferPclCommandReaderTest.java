@@ -28,18 +28,95 @@ public class ByteBufferPclCommandReaderTest {
     @Test
     @Ignore("debugging purposes only, should go away")
     public void realFile() throws Exception {
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 20; i++) {
             long start = System.currentTimeMillis();
             PclCommandReader reader = new MappedFilePclCommandReader(new File(Thread.currentThread().getContextClassLoader().getResource("example/sample.pcl").toURI()));
             PclCommand command = null;
             int count = 0;
             while ((command = reader.nextCommand()) != null) {
-                int length = command.getBytes().length;
-//            System.out.println("command = " + command);
                 count++;
             }
             System.out.println((System.currentTimeMillis() - start) + " millis; " + count + " commands");
         }
+    }
+
+    @Test
+    @Ignore("need to support")
+    public void shouldHandleUniversalExitCommand_noData() {
+        byte[] expectedCommand = ByteArrayUtil.concat(
+                new byte[]{PclUtil.ESCAPE},
+                "%-12345X".getBytes()
+        );
+        ByteBufferPclCommandReader reader = createReader(expectedCommand);
+
+        assertParameterizedCommand(0L, expectedCommand, reader.nextCommand());
+    }
+
+    @Test
+    @Ignore("need to support")
+    public void shouldHandleUniversalExitCommand_withData() {
+        byte[] expectedCommand = ByteArrayUtil.concat(
+                new byte[]{PclUtil.ESCAPE},
+                "%-12345X@PJL JOB".getBytes()
+        );
+        ByteBufferPclCommandReader reader = createReader(expectedCommand);
+
+        assertParameterizedCommand(0L, expectedCommand, reader.nextCommand());
+    }
+
+
+    @Test
+    public void shouldHandleCommandsWithALowerTerminatorAndLastCommandFollowedByText() {
+        PclCommandBuilder cmd1 = new PclCommandBuilder(false).p('*').g('p').v("10").t('x');
+        PclCommandBuilder cmd2 = new PclCommandBuilder(false).p('(').g('s').v("0").t('S');
+
+        ByteBufferPclCommandReader reader = createReader(ByteArrayUtil.concat(cmd1.toBytes(), cmd2.toBytes(), "Moved".getBytes()));
+
+        assertParameterizedCommand(0L, cmd1.toBytes(), reader.nextCommand());
+        assertParameterizedCommand(6L, cmd2.toBytes(), reader.nextCommand());
+        assertTextCommand(11L, "Moved".getBytes(), reader.nextCommand());
+    }
+
+    @Test
+    public void shouldHandle2CommandsFirstEndsWithALowercaseTerminator() {
+        PclCommandBuilder cmd1 = new PclCommandBuilder(false).p('*').g('p').v("10").t('x');
+        PclCommandBuilder cmd2 = new PclCommandBuilder(false).p('(').g('s').v("0").t('S');
+
+        ByteBufferPclCommandReader reader = createReader(ByteArrayUtil.concat(cmd1.toBytes(), cmd2.toBytes()));
+
+        assertParameterizedCommand(0L, cmd1.toBytes(), reader.nextCommand());
+        assertParameterizedCommand(6L, cmd2.toBytes(), reader.nextCommand());
+    }
+
+    @Test
+    @Ignore("have seen in the wild...")
+    public void shouldHandleCommandsWithALowerTerminatorAndFollowedByText() {
+        PclCommandBuilder cmd1 = new PclCommandBuilder(false).p('*').g('p').v("10").t('x').d("I Am text");
+
+        ByteBufferPclCommandReader reader = createReader(cmd1.toBytes());
+
+        assertParameterizedCommand(0L, cmd1.toBytes(), reader.nextCommand());
+    }
+
+
+    @Test
+    public void shouldOnlyCaptureTheNumberBytesSpecifiedByTheValueOfTheCommand_PaddedValue() {
+        PclCommandBuilder builder = new PclCommandBuilder().p('*').g('c').v(" 4 ").t('E').d("data");
+
+        ByteBufferPclCommandReader reader = createReader(ByteArrayUtil.concat(builder.toBytes(), "12".getBytes()));
+
+        assertParameterizedCommand(0L, builder.toBytes(), reader.nextCommand());
+        assertTextCommand(11L, "12".getBytes(), reader.nextCommand());
+    }
+
+    @Test
+    public void shouldOnlyCaptureTheNumberBytesSpecifiedByTheValueOfTheCommand_PositiveValue() {
+        PclCommandBuilder builder = new PclCommandBuilder().p('*').g('c').v("+4").t('E').d("data");
+
+        ByteBufferPclCommandReader reader = createReader(ByteArrayUtil.concat(builder.toBytes(), "12".getBytes()));
+
+        assertParameterizedCommand(0L, builder.toBytes(), reader.nextCommand());
+        assertTextCommand(10L, "12".getBytes(), reader.nextCommand());
     }
 
     @Test
@@ -63,8 +140,28 @@ public class ByteBufferPclCommandReaderTest {
     }
 
     @Test
-    public void shouldCaptureBinaryDataWhenTheCommandIs_AsciiCodeDecimal() {
-        PclCommandBuilder builder = new PclCommandBuilder().p('*').g('c').v("4").t('E').d("data");
+    public void shouldOnlyCaptureTheNumberBytesSpecifiedByTheValueOfTheCommand_NoValue() {
+        PclCommandBuilder builder = new PclCommandBuilder().p('*').g('c').t('E');
+
+        ByteBufferPclCommandReader reader = createReader(ByteArrayUtil.concat(builder.toBytes(), "data12".getBytes()));
+
+        assertParameterizedCommand(0L, builder.toBytes(), reader.nextCommand());
+        assertTextCommand(4L, "data12".getBytes(), reader.nextCommand());
+    }
+
+    @Test
+    public void shouldCaptureBinaryDataWhenTheCommandIs_DecimalValue() {
+        PclCommandBuilder builder = new PclCommandBuilder().p('*').g('c').v("4.0").t('E').d("data");
+
+        ByteBufferPclCommandReader reader = createReader(builder.toBytes());
+
+        assertParameterizedCommand(0L, builder.toBytes(), reader.nextCommand());
+    }
+
+    @Test
+    @Ignore("have seen in the wild...")
+    public void shouldCaptureBinaryDataWhenTheCommandIs_LowercaseTerminator() {
+        PclCommandBuilder builder = new PclCommandBuilder(false).p('*').g('c').v("4").t('e').d("data");
 
         ByteBufferPclCommandReader reader = createReader(builder.toBytes());
 
@@ -91,6 +188,34 @@ public class ByteBufferPclCommandReaderTest {
     }
 
     @Test
+    public void shouldHandleParsingCompressedParameterizedCommands() {
+        byte[] fileContents = new byte[]{ESCAPE, LOWEST_PARAMETERIZED_BYTE, LOWEST_GROUP_BYTE, '1', LOWEST_PARAMETER_BYTE, '2', HIGHEST_TERMINATION_BYTE};
+        PclCommandBuilder base = new PclCommandBuilder(false).p(LOWEST_PARAMETERIZED_BYTE).g(LOWEST_GROUP_BYTE);
+        byte[] expectedCommand1 = base.copy().v("1").t(LOWEST_TERMINATION_BYTE).toBytes();
+        byte[] expectedCommand2 = base.copy().v("2").t(HIGHEST_TERMINATION_BYTE).toBytes();
+
+        ByteBufferPclCommandReader reader = createReader(fileContents);
+
+        assertParameterizedCommand(0, expectedCommand1, reader.nextCommand());
+        assertParameterizedCommand(5, expectedCommand2, reader.nextCommand());
+    }
+
+    @Test
+    public void shouldHandleParsingCompressedParameterizedCommandsFollowedByAnUncompressedCommand() {
+        byte[] compressedContents = new byte[]{ESCAPE, LOWEST_PARAMETERIZED_BYTE, LOWEST_GROUP_BYTE, '1', LOWEST_PARAMETER_BYTE, '2', HIGHEST_TERMINATION_BYTE};
+        PclCommandBuilder base = new PclCommandBuilder(false).p(LOWEST_PARAMETERIZED_BYTE).g(LOWEST_GROUP_BYTE);
+        byte[] expectedCommand1 = base.copy().v("1").t(LOWEST_TERMINATION_BYTE).toBytes();
+        byte[] expectedCommand2 = base.copy().v("2").t(HIGHEST_TERMINATION_BYTE).toBytes();
+
+        ByteBufferPclCommandReader reader = createReader(ByteArrayUtil.concat(compressedContents, expectedCommand1));
+
+        assertParameterizedCommand(0, expectedCommand1, reader.nextCommand());
+        assertParameterizedCommand(5, expectedCommand2, reader.nextCommand());
+        assertParameterizedCommand(7, expectedCommand1, reader.nextCommand());
+        assertNull(reader.nextCommand());
+    }
+
+    @Test
     public void shouldBeAbleToSkipLeadingBytesAndContinueParsingACommand() {
         byte[] fileContents = new byte[]{0, 0, ESCAPE, LOWEST_2BYTE_COMMAND_OPERATOR};
         byte[] expectCommand = new byte[]{ESCAPE, LOWEST_2BYTE_COMMAND_OPERATOR};
@@ -102,27 +227,19 @@ public class ByteBufferPclCommandReaderTest {
     }
 
     @Test
-    @Ignore("thinking this was a bug...")
-    public void shouldFixLowercaseTerminationBytes() {
-        byte[] fileContents = new byte[]{
-                ESCAPE, LOWEST_PARAMETERIZED_BYTE, LOWEST_GROUP_BYTE, '1', LOWEST_PARAMETER_BYTE
-        };
+    public void shouldAllowLowercaseTerminationBytes() {
+        PclCommandBuilder builder = new PclCommandBuilder(false).p('*').g('c').v("0").t('e');
+        PclCommandBuilder otherBuilder = new PclCommandBuilder(false).p('*').g('c').v("0").t('E');
 
-        byte[] expectedCommand = new byte[]{
-                ESCAPE, LOWEST_PARAMETERIZED_BYTE, LOWEST_GROUP_BYTE, '1', LOWEST_TERMINATION_BYTE
-        };
+        ByteBufferPclCommandReader reader = createReader(ByteArrayUtil.concat(builder.toBytes(), otherBuilder.toBytes()));
 
-        ByteBufferPclCommandReader reader = createReader(fileContents);
-
-        assertParameterizedCommand(0L, expectedCommand, reader.nextCommand());
+        assertParameterizedCommand(0L, builder.toBytes(), reader.nextCommand());
     }
 
     @Test
-    @Ignore("this should become invalid case...")
     public void shouldTreatTheEscapeCharacterAsPartOfTheBinaryDataIfTheFollowingByteIsNotAParameterizedByte() {
-        byte[] fileContents = new byte[]{
-                ESCAPE, LOWEST_PARAMETERIZED_BYTE, LOWEST_GROUP_BYTE, '1', LOWEST_TERMINATION_BYTE, ESCAPE, '0'
-        };
+        PclCommandBuilder builder = new PclCommandBuilder().p('*').g('c').v("2").t('E').d(new byte[]{ESCAPE, '0'});
+        byte[] fileContents = builder.toBytes();
 
         ByteBufferPclCommandReader reader = createReader(fileContents);
 
