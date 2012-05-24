@@ -66,6 +66,24 @@ public class ByteBufferPclCommandReaderTest {
 
 
     @Test
+    public void shouldHandleSecondarySymbolSetsWithoutAGroupByte() {
+        PclCommandBuilder command = new PclCommandBuilder(false).p(')').g('8').t('U');
+
+        ByteBufferPclCommandReader reader = createReader(command.toBytes());
+
+        assertParameterizedCommand(0L, command.toBytes(), reader.nextCommand());
+    }
+
+    @Test
+    public void shouldHandleSymbolSetsWithoutAGroupByte() {
+        PclCommandBuilder command = new PclCommandBuilder(false).p('(').g('8').t('U');
+
+        ByteBufferPclCommandReader reader = createReader(command.toBytes());
+
+        assertParameterizedCommand(0L, command.toBytes(), reader.nextCommand());
+    }
+
+    @Test
     public void shouldHandleCommandsWithALowerTerminatorAndLastCommandFollowedByText() {
         PclCommandBuilder cmd1 = new PclCommandBuilder(false).p('*').g('p').v("10").t('x');
         PclCommandBuilder cmd2 = new PclCommandBuilder(false).p('(').g('s').v("0").t('S');
@@ -75,6 +93,19 @@ public class ByteBufferPclCommandReaderTest {
         assertParameterizedCommand(0L, cmd1.toBytes(), reader.nextCommand());
         assertParameterizedCommand(6L, cmd2.toBytes(), reader.nextCommand());
         assertTextCommand(11L, "Moved".getBytes(), reader.nextCommand());
+    }
+
+    @Test
+    @Ignore
+    public void shouldMakeAFormFeedItsOwnCommand() {
+        ByteBufferPclCommandReader reader = createReader("\f12\f34\f".getBytes());
+
+        assertTextCommand(0L, "\f".getBytes(), reader.nextCommand());
+        assertTextCommand(1L, "12".getBytes(), reader.nextCommand());
+        assertTextCommand(3L, "\f".getBytes(), reader.nextCommand());
+        assertTextCommand(4L, "34".getBytes(), reader.nextCommand());
+        assertTextCommand(5L, "\f".getBytes(), reader.nextCommand());
+        assertNull(reader.nextCommand());
     }
 
     @Test
@@ -162,6 +193,15 @@ public class ByteBufferPclCommandReaderTest {
     @Ignore("have seen in the wild...")
     public void shouldCaptureBinaryDataWhenTheCommandIs_LowercaseTerminator() {
         PclCommandBuilder builder = new PclCommandBuilder(false).p('*').g('c').v("4").t('e').d("data");
+
+        ByteBufferPclCommandReader reader = createReader(builder.toBytes());
+
+        assertParameterizedCommand(0L, builder.toBytes(), reader.nextCommand());
+    }
+
+    @Test
+    public void shouldHandleIfTheValueIsNotProvided() {
+        PclCommandBuilder builder = new PclCommandBuilder(false).p('*').g('p').t('E');
 
         ByteBufferPclCommandReader reader = createReader(builder.toBytes());
 

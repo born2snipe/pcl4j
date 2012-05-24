@@ -14,25 +14,16 @@
 
 package pcl4j.io;
 
-/**
- * Represents text found in a pcl file
- */
-public class TextCommand extends PclCommand {
-    public TextCommand(byte[] bytes) {
-        super(bytes);
-    }
+import org.junit.Test;
 
-    public TextCommand(long position, byte[] bytes) {
-        super(position, bytes);
-    }
+import static junit.framework.Assert.assertEquals;
 
-    public String toAscii() {
-        StringBuilder builder = new StringBuilder();
-        for (int i = 0; i < getBytes().length; i++) {
-            char currentChar = (char) getBytes()[i];
-            builder.append(currentChar);
-        }
-        return builder.toString();
+public class TextCommandTest {
+    @Test
+    public void toAscii_shouldGiveBackTheSameValueProvided() {
+        String value = "value";
+        TextCommand command = new TextCommand(value.getBytes());
+        assertEquals(value, command.toAscii());
     }
 
 }
