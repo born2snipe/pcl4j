@@ -21,23 +21,23 @@ import org.junit.Test;
 import java.io.File;
 
 import static junit.framework.Assert.assertNull;
+import static junit.framework.Assert.assertTrue;
 import static pcl4j.io.AssertPcl.*;
 import static pcl4j.io.PclUtil.*;
 
 public class ByteBufferPclCommandReaderTest {
     @Test
-    @Ignore("debugging purposes only, should go away")
-    public void realFile() throws Exception {
-        for (int i = 0; i < 20; i++) {
-            long start = System.currentTimeMillis();
-            PclCommandReader reader = new MappedFilePclCommandReader(new File(Thread.currentThread().getContextClassLoader().getResource("example/sample.pcl").toURI()));
-            PclCommand command = null;
-            int count = 0;
-            while ((command = reader.nextCommand()) != null) {
-                count++;
-            }
-            System.out.println((System.currentTimeMillis() - start) + " millis; " + count + " commands");
+    public void performanceTest() throws Exception {
+        File file = new File(Thread.currentThread().getContextClassLoader().getResource("example/sample.pcl").toURI());
+        long overalStart = System.currentTimeMillis();
+        int times = 20;
+        for (int i = 0; i < times; i++) {
+            PclCommandReader reader = new MappedFilePclCommandReader(file);
+            while (reader.nextCommand() != null) ;
         }
+        long elapsedTimeAvg = (System.currentTimeMillis() - overalStart) / times;
+        System.out.println(elapsedTimeAvg + " millis");
+        assertTrue("The average time to parse the sample file is getting bigger (Avg:" + elapsedTimeAvg + " millis)", elapsedTimeAvg < 250);
     }
 
     @Test

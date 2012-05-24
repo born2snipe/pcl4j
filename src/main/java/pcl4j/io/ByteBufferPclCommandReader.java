@@ -33,6 +33,7 @@ public class ByteBufferPclCommandReader implements PclCommandReader {
     private ByteArrayOutputStream commandPrefixBytes = new ByteArrayOutputStream(3);
     private ByteArrayOutputStream commandData = new ByteArrayOutputStream(1024);
     private ByteArrayOutputStream valueData = new ByteArrayOutputStream(16);
+    private long commandPosition;
 
     public ByteBufferPclCommandReader(byte[] entirePclFileContents) {
         this(ByteBuffer.wrap(entirePclFileContents));
@@ -62,28 +63,27 @@ public class ByteBufferPclCommandReader implements PclCommandReader {
 
         valueData.reset();
         commandData.reset();
-        long commandPosition = filePosition;
+        commandPrefixBytes.reset();
+        commandPosition = filePosition;
+
         byte currentByte = readNextByte();
         if (pclUtil.isEscape(currentByte)) {
-            pclCommand(commandPosition);
-            return queuedCommands.remove();
+            pclCommand();
         } else {
-            textCommand(commandPosition, currentByte);
-            return queuedCommands.remove();
+            undoRead();
+            textCommand();
         }
+        return queuedCommands.remove();
     }
 
-    private void pclCommand(long initialCommandPosition) {
+    private void pclCommand() {
         commandData.write(PclUtil.ESCAPE);
-        commandPrefixBytes.reset();
         commandPrefixBytes.write(PclUtil.ESCAPE);
-
-        long commandPosition = initialCommandPosition;
 
         byte currentByte = readNextByte();
         if (pclUtil.is2ByteCommandOperator(currentByte)) {
             commandData.write(currentByte);
-            queueUpCommand(commandPosition);
+            queueUpCommand();
         } else if (pclUtil.isParameterizedCharacter(currentByte)) {
             commandData.write(currentByte);
             commandPrefixBytes.write(currentByte);
@@ -96,58 +96,64 @@ public class ByteBufferPclCommandReader implements PclCommandReader {
                 do {
                     currentByte = readNextByte();
 
-                    if (pclUtil.isParameterCharacter(currentByte) && isNextByteNotAnEscapeByte()) {
+                    if (isACompoundCommand(currentByte)) {
                         writeValueDataToCommand();
                         currentByte = pclUtil.changeParameterToTerminator(currentByte);
                         commandData.write(currentByte);
-                        queueUpCommand(commandPosition);
-
-                        commandPosition = filePosition;
-                        valueData.reset();
-                        commandData.reset();
-                        commandData.write(commandPrefixBytes.toByteArray(), 0, 3);
-                    } else if (pclUtil.isTermination((byte) Character.toUpperCase(currentByte))) {
+                        queueUpCommand();
+                        copyCommandPrefixToCommand();
+                    } else if (isTerminationByte(currentByte)) {
                         writeValueDataToCommand();
                         commandData.write(currentByte);
+                        captureBinaryDataAsNeeded();
+                        queueUpCommand();
                         break;
                     } else {
                         valueData.write(currentByte);
                     }
                 } while (true);
-
-                if (pclUtil.isCommandExpectingData(commandData.toByteArray())) {
-                    captureBinaryData(commandData);
-                }
-
-                queueUpCommand(commandPosition);
             } else {
                 commandData.write(currentByte);
 
                 do {
                     currentByte = readNextByte();
-                    if (pclUtil.isTermination((byte) Character.toUpperCase(currentByte))) {
+                    if (isTerminationByte(currentByte)) {
                         writeValueDataToCommand();
                         commandData.write(currentByte);
+                        queueUpCommand();
                         break;
                     } else {
                         valueData.write(currentByte);
                     }
                 } while (true);
-
-                queueUpCommand(commandPosition);
             }
         }
     }
 
-    private void queueUpCommand(long commandPosition) {
+    private boolean isTerminationByte(byte currentByte) {
+        return pclUtil.isTermination((byte) Character.toUpperCase(currentByte));
+    }
+
+    private boolean isACompoundCommand(byte currentByte) {
+        return pclUtil.isParameterCharacter(currentByte) && isNextByteNotAnEscapeByte();
+    }
+
+    private void copyCommandPrefixToCommand() {
+        commandData.write(commandPrefixBytes.toByteArray(), 0, commandPrefixBytes.toByteArray().length);
+    }
+
+    private void queueUpCommand() {
         queuedCommands.add(pclCommandFactory.build(commandPosition, commandData.toByteArray()));
+        valueData.reset();
+        commandData.reset();
+        commandPosition = filePosition;
     }
 
     private void writeValueDataToCommand() {
         try {
             valueData.writeTo(commandData);
         } catch (IOException e) {
-            throw new PclCommandReaderException("A problem writing the value", e);
+            throw new PclCommandReaderException("A problem writing the value to the command", e);
         }
     }
 
@@ -155,24 +161,30 @@ public class ByteBufferPclCommandReader implements PclCommandReader {
         return !isNextByteAnEscapeByte();
     }
 
-    private void captureBinaryData(ByteArrayOutputStream commandData) {
-        String valueAsString = new String(pclUtil.getValue(commandData.toByteArray())).replaceAll("\\+|\\.[0-9]*|\\s+", "");
-        Integer numberOfBytesToRead = valueAsString.length() == 0 ? 0 : Integer.valueOf(valueAsString);
-        int count = 0;
-        while (isNotEOF() && count < numberOfBytesToRead) {
-            commandData.write(readNextByte());
-            count++;
+    private void captureBinaryDataAsNeeded() {
+        if (pclUtil.isCommandExpectingData(commandData.toByteArray())) {
+            Integer numberOfBytesToRead = commandValueAsInt();
+            int count = 0;
+            while (isNotEOF() && count < numberOfBytesToRead) {
+                commandData.write(readNextByte());
+                count++;
+            }
         }
     }
 
-    private void textCommand(long commandPosition, byte currentByte) {
-        commandData.write(currentByte);
+    private Integer commandValueAsInt() {
+        String valueAsString = new String(valueData.toByteArray()).replaceAll("\\+|\\.[0-9]*|\\s+", "");
+        return valueAsString.length() == 0 ? 0 : Integer.valueOf(valueAsString);
+    }
 
+    private void textCommand() {
         while (isNotEOF() && !isNextByteAnEscapeByte()) {
             commandData.write(readNextByte());
         }
 
-        queueUpCommand(commandPosition);
+        if (commandData.toByteArray().length > 0) {
+            queueUpCommand();
+        }
     }
 
     private boolean isNextByteAnEscapeByte() {
@@ -181,6 +193,11 @@ public class ByteBufferPclCommandReader implements PclCommandReader {
             result = pclUtil.isEscape(peekAtNextByte());
         }
         return result;
+    }
+
+    private void undoRead() {
+        buffer.reset();
+        filePosition--;
     }
 
     private byte peekAtNextByte() {
