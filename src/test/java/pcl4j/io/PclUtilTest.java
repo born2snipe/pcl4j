@@ -425,6 +425,35 @@ public class PclUtilTest {
         }
     }
 
+    @Test
+    public void isUniversalExit_shouldReturnTrueIfThereIsAnExactMatch() {
+        byte[] commandData = new PclCommandBuilder(false).p('%').g('-').v("12345").t('X').toBytes();
+        assertTrue(util.isUniversalExit(commandData));
+    }
+
+    @Test
+    public void isUniversalExit_shouldReturnFalseIfTheCommandGivenIsOnlyPartiallyAnUniversalExitCommand() {
+        assertFalse(util.isUniversalExit(new byte[]{0x1b, '%', '-', '1', '2'}));
+    }
+
+    @Test
+    public void isUniversalExit_shouldReturnFalseIfItDoesNotMatch() {
+        byte[] commandData = new PclCommandBuilder(false).p('%').g('-').v("11").t('X').toBytes();
+        assertFalse(util.isUniversalExit(commandData));
+    }
+
+    @Test
+    public void isUniversalExit_shouldBePerformant() {
+        byte[] commandData = new PclCommandBuilder(false).p('%').g('-').v("12345").t('X').toBytes();
+        long start = System.currentTimeMillis();
+        for (int i = 0; i < 1000000; i++) {
+            util.isUniversalExit(commandData);
+        }
+        long elapsedTime = System.currentTimeMillis() - start;
+        assertTrue("this should be a performant method (elasped: " + elapsedTime + " millis)", elapsedTime < 100);
+    }
+
+
     private void assertBytes(byte[] expectedValue, byte[] actualBytes) {
         assertTrue("Byte do not match. expected=[" + new String(expectedValue) + "], actual=[" + new String(actualBytes) + "]",
                 Arrays.equals(expectedValue, actualBytes));

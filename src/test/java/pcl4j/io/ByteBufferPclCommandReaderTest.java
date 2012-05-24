@@ -41,7 +41,6 @@ public class ByteBufferPclCommandReaderTest {
     }
 
     @Test
-    @Ignore("need to support")
     public void shouldHandleUniversalExitCommand_noData() {
         byte[] expectedCommand = ByteArrayUtil.concat(
                 new byte[]{PclUtil.ESCAPE},
@@ -53,7 +52,6 @@ public class ByteBufferPclCommandReaderTest {
     }
 
     @Test
-    @Ignore("need to support")
     public void shouldHandleUniversalExitCommand_withData() {
         byte[] expectedCommand = ByteArrayUtil.concat(
                 new byte[]{PclUtil.ESCAPE},
@@ -63,7 +61,6 @@ public class ByteBufferPclCommandReaderTest {
 
         assertParameterizedCommand(0L, expectedCommand, reader.nextCommand());
     }
-
 
     @Test
     public void shouldHandleSecondarySymbolSetsWithoutAGroupByte() {

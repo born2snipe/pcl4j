@@ -120,12 +120,17 @@ public class ByteBufferPclCommandReader implements PclCommandReader {
                     if (isTerminationByte(currentByte)) {
                         writeValueDataToCommand();
                         commandData.write(currentByte);
+                        if (pclUtil.isUniversalExit(commandData.toByteArray())) {
+                            while (isNextByteNotAnEscapeByte()) {
+                                commandData.write(readNextByte());
+                            }
+                        }
                         queueUpCommand();
                         break;
                     } else {
                         valueData.write(currentByte);
                     }
-                } while (true);
+                } while (isNotEOF());
             }
         }
     }

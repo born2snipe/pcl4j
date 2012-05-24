@@ -23,6 +23,7 @@ import java.util.Arrays;
 public class PclUtil {
     private static final String[] BINARY_DATA_COMMANDS = {"*c#E", ")s#W", "(s#W", "(f#W", "&n#W", "*b#W", "*g#W", "*b#Y", "*b#V", "*v#W", "*l#W", "*o#W", "*m#W", "&p#X"};
     private static final int[] BINARY_DATA_COMMANDS_HASHES = initializeBinaryDataHashes();
+    private static final byte[] UNIVERSAL_EXIT_BYTES = "%-12345X".getBytes();
 
     public static final int PARAMETERIZED_BYTE_POSITION = 1;
     public static final int GROUP_BYTE_POSITION = 2;
@@ -271,6 +272,27 @@ public class PclUtil {
                 (byte) Character.toUpperCase((char) getTerminatorByte(commandBytes))
         };
         return Arrays.binarySearch(BINARY_DATA_COMMANDS_HASHES, Arrays.hashCode(commandId)) > -1;
+    }
+
+    /**
+     * Determines if the given command is a "Universal Exit"
+     *
+     * @param commandBytes - the bytes that make up the command
+     * @return true - is an universal exit command
+     *         false - is not an universal exit command
+     */
+    public boolean isUniversalExit(byte[] commandBytes) {
+        if (commandBytes.length < UNIVERSAL_EXIT_BYTES.length) {
+            return false;
+        }
+
+        for (int i = 0; i < UNIVERSAL_EXIT_BYTES.length; i++) {
+            if (UNIVERSAL_EXIT_BYTES[i] != commandBytes[i + 1]) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private void requiresParameterizedCommand(PclCommand command) {
