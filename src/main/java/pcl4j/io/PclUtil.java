@@ -24,6 +24,7 @@ public class PclUtil {
     private static final String[] BINARY_DATA_COMMANDS = {"*c#E", ")s#W", "(s#W", "(f#W", "&n#W", "*b#W", "*g#W", "*b#Y", "*b#V", "*v#W", "*l#W", "*o#W", "*m#W", "&p#X"};
     private static final int[] BINARY_DATA_COMMANDS_HASHES = initializeBinaryDataHashes();
     private static final byte[] UNIVERSAL_EXIT_BYTES = "%-12345X".getBytes();
+    private static final byte[] NUMBERS_BYTES = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
 
     public static final int PARAMETERIZED_BYTE_POSITION = 1;
     public static final int GROUP_BYTE_POSITION = 2;
@@ -293,6 +294,74 @@ public class PclUtil {
         }
 
         return true;
+    }
+
+    /**
+     * Converts a value to an integer value
+     * <p/>
+     * Warning: this truncates decimal point values
+     *
+     * @param valueBytes - the value bytes of a command
+     * @return an integer value
+     */
+    public int convertValueToInt(byte[] valueBytes) {
+        if (valueBytes.length == 0) {
+            return 0;
+        }
+
+        byte[] integerBytes = new byte[valueBytes.length];
+        byte position = 0;
+        for (byte valueByte : valueBytes) {
+            if (isNumeric(valueByte)) {
+                integerBytes[position++] = valueByte;
+            } else if (isDecimal(valueByte)) {
+                break;
+            } else if (isMinus(valueByte)) {
+                integerBytes[position++] = valueByte;
+            }
+        }
+
+        int numberLength = position - 1;
+        int value = 0;
+        for (int i = position - 1; i >= 0; i--) {
+            byte integerByte = integerBytes[i];
+            if (isNumeric(integerByte)) {
+                int numberPosition = numberLength - i;
+                int numberValue = indexOf(NUMBERS_BYTES, integerByte);
+                for (int j = 0; j < numberPosition; j++) numberValue *= 10;
+                value += numberValue;
+            } else if (isMinus(integerByte)) {
+                value *= -1;
+            }
+        }
+
+        return value;
+    }
+
+    private boolean isDecimal(byte valueByte) {
+        return valueByte == '.';
+    }
+
+    private boolean isMinus(byte valueByte) {
+        return valueByte == '-';
+    }
+
+    private boolean isNumeric(byte valueByte) {
+        return valueByte >= '0' && valueByte <= '9';
+    }
+
+    private int indexOf(byte[] bytesToSearch, byte byteToFind) {
+        if (bytesToSearch.length == 0) {
+            return -1;
+        }
+
+        for (int i = 0; i < bytesToSearch.length; i++) {
+            if (byteToFind == bytesToSearch[i]) {
+                return i;
+            }
+        }
+
+        return -1;
     }
 
     private void requiresParameterizedCommand(PclCommand command) {

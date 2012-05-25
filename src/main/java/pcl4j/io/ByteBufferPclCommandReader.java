@@ -168,7 +168,7 @@ public class ByteBufferPclCommandReader implements PclCommandReader {
 
     private void captureBinaryDataAsNeeded() {
         if (pclUtil.isCommandExpectingData(commandData.toByteArray())) {
-            Integer numberOfBytesToRead = commandValueAsInt();
+            int numberOfBytesToRead = commandValueAsInt();
             int count = 0;
             while (isNotEOF() && count < numberOfBytesToRead) {
                 commandData.write(readNextByte());
@@ -177,9 +177,8 @@ public class ByteBufferPclCommandReader implements PclCommandReader {
         }
     }
 
-    private Integer commandValueAsInt() {
-        String valueAsString = new String(valueData.toByteArray()).replaceAll("\\+|\\.[0-9]*|\\s+", "");
-        return valueAsString.length() == 0 ? 0 : Integer.valueOf(valueAsString);
+    private int commandValueAsInt() {
+        return pclUtil.convertValueToInt(valueData.toByteArray());
     }
 
     private void textCommand() {

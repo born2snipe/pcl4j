@@ -453,6 +453,42 @@ public class PclUtilTest {
         assertTrue("this should be a performant method (elasped: " + elapsedTime + " millis)", elapsedTime < 100);
     }
 
+    @Test
+    public void convertValueToInt_shouldSupportWithLeadingPlusSymbol() {
+        assertEquals(10, util.convertValueToInt("+10".getBytes()));
+    }
+
+    @Test
+    public void convertValueToInt_shouldSupportWithLeadingMinusSymbol() {
+        assertEquals(-100, util.convertValueToInt("-100".getBytes()));
+    }
+
+    @Test
+    public void convertValueToInt_shouldSupportWithPaddedSpaces() {
+        assertEquals(20, util.convertValueToInt(" 20 ".getBytes()));
+    }
+
+    @Test
+    public void convertValueToInt_shouldSupportWithDecimalPoints() {
+        assertEquals(10, util.convertValueToInt("10.01".getBytes()));
+    }
+
+    @Test
+    public void convertValueToInt_shouldReturnZeroIfNoBytesAreGiven() {
+        assertEquals(0, util.convertValueToInt(new byte[0]));
+    }
+
+    @Test
+    public void convertValueToInt_shouldBePerformant() {
+        byte[] commandData = "+10.0001".getBytes();
+
+        long start = System.currentTimeMillis();
+        for (int i = 0; i < 1000000; i++) {
+            util.convertValueToInt(commandData);
+        }
+        long elapsedTime = System.currentTimeMillis() - start;
+        assertTrue("this should be a performant method (elasped: " + elapsedTime + " millis)", elapsedTime < 400);
+    }
 
     private void assertBytes(byte[] expectedValue, byte[] actualBytes) {
         assertTrue("Byte do not match. expected=[" + new String(expectedValue) + "], actual=[" + new String(actualBytes) + "]",
