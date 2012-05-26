@@ -15,8 +15,6 @@
 package pcl4j.io;
 
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
 import java.util.Queue;
@@ -30,9 +28,9 @@ public class ByteBufferPclCommandReader implements PclCommandReader {
     protected ByteBuffer buffer;
     private long filePosition = 0;
     private Queue<PclCommand> queuedCommands = new LinkedList<PclCommand>();
-    private ByteArrayOutputStream commandPrefixBytes = new ByteArrayOutputStream(3);
-    private ByteArrayOutputStream commandData = new ByteArrayOutputStream(1024);
-    private ByteArrayOutputStream valueData = new ByteArrayOutputStream(16);
+    private UnsyncronizedByteArrayOutputStream commandPrefixBytes = new UnsyncronizedByteArrayOutputStream(3);
+    private UnsyncronizedByteArrayOutputStream commandData = new UnsyncronizedByteArrayOutputStream(1024);
+    private UnsyncronizedByteArrayOutputStream valueData = new UnsyncronizedByteArrayOutputStream(16);
     private long commandPosition;
 
     public ByteBufferPclCommandReader(byte[] entirePclFileContents) {
@@ -144,7 +142,7 @@ public class ByteBufferPclCommandReader implements PclCommandReader {
     }
 
     private void copyCommandPrefixToCommand() {
-        commandData.write(commandPrefixBytes.toByteArray(), 0, commandPrefixBytes.toByteArray().length);
+        commandData.write(commandPrefixBytes.toByteArray());
     }
 
     private void queueUpCommand() {
@@ -155,11 +153,7 @@ public class ByteBufferPclCommandReader implements PclCommandReader {
     }
 
     private void writeValueDataToCommand() {
-        try {
-            valueData.writeTo(commandData);
-        } catch (IOException e) {
-            throw new PclCommandReaderException("A problem writing the value to the command", e);
-        }
+        commandData.write(valueData.toByteArray());
     }
 
     private boolean isNextByteNotAnEscapeByte() {
@@ -186,7 +180,7 @@ public class ByteBufferPclCommandReader implements PclCommandReader {
             commandData.write(readNextByte());
         }
 
-        if (commandData.toByteArray().length > 0) {
+        if (commandData.size() > 0) {
             queueUpCommand();
         }
     }

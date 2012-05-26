@@ -487,7 +487,7 @@ public class PclUtilTest {
             util.convertValueToInt(commandData);
         }
         long elapsedTime = System.currentTimeMillis() - start;
-        assertTrue("this should be a performant method (elasped: " + elapsedTime + " millis)", elapsedTime < 400);
+        assertTrue("this should be a performant method (elasped: " + elapsedTime + " millis)", elapsedTime < 500);
     }
 
     private void assertBytes(byte[] expectedValue, byte[] actualBytes) {

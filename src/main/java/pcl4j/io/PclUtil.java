@@ -14,7 +14,6 @@
 
 package pcl4j.io;
 
-import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
 
 /**
@@ -240,7 +239,7 @@ public class PclUtil {
      * @return a byte array containing all the value bytes
      */
     public byte[] getValue(byte[] commandBytes) {
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        UnsyncronizedByteArrayOutputStream output = new UnsyncronizedByteArrayOutputStream(commandBytes.length);
         if (isTermination(commandBytes[VALUE_BYTE_START_POSITION])) {
             output.write('0');
         } else {
