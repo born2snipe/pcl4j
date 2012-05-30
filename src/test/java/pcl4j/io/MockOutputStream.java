@@ -15,13 +15,12 @@
 package pcl4j.io;
 
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
 public class MockOutputStream extends OutputStream {
     private boolean closed = false;
-    private ByteArrayOutputStream output = new ByteArrayOutputStream();
+    private UnsyncronizedByteArrayOutputStream output = new UnsyncronizedByteArrayOutputStream(32);
     private IOException exceptionToThrow;
 
     @Override

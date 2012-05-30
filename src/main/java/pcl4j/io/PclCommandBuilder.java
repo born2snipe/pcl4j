@@ -15,9 +15,6 @@
 package pcl4j.io;
 
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-
 /**
  * A builder for building pcl commands
  */
@@ -142,22 +139,16 @@ public class PclCommandBuilder {
      * @return a byte array representing the command
      */
     public byte[] toBytes() {
-        ByteArrayOutputStream data = new ByteArrayOutputStream();
+        UnsyncronizedByteArrayOutputStream data = new UnsyncronizedByteArrayOutputStream(32);
         data.write(PclUtil.ESCAPE);
         data.write(parameterized);
         data.write(group);
         if (value != null) {
-            try {
-                data.write(value.getBytes());
-            } catch (IOException e) {
-            }
+            data.write(value.getBytes());
         }
         data.write(terminator);
         if (binaryData != null) {
-            try {
-                data.write(binaryData);
-            } catch (IOException e) {
-            }
+            data.write(binaryData);
         }
         return data.toByteArray();
     }

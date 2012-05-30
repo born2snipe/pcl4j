@@ -14,8 +14,6 @@
 
 package pcl4j.io;
 
-import java.io.ByteArrayOutputStream;
-
 /**
  * Compresses 2 parameterized commands together based on the following rules:
  * <p/>
@@ -46,7 +44,7 @@ public class PclCommandCompressor {
 
         byte[] commandToAppendToBytes = commandToAppendTo.getBytes();
         byte[] commandToAppendBytes = commandToAppend.getBytes();
-        ByteArrayOutputStream compressedBytes = new ByteArrayOutputStream(commandToAppendBytes.length + commandToAppendToBytes.length);
+        UnsyncronizedByteArrayOutputStream compressedBytes = new UnsyncronizedByteArrayOutputStream(commandToAppendBytes.length + commandToAppendToBytes.length);
 
         for (int i = 0; i < commandToAppendToBytes.length; i++) {
             byte currentByte = commandToAppendToBytes[i];
