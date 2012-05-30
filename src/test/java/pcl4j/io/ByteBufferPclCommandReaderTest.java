@@ -129,7 +129,7 @@ public class ByteBufferPclCommandReaderTest {
 
     @Test
     public void shouldOnlyCaptureTheNumberBytesSpecifiedByTheValueOfTheCommand_PaddedValue() {
-        PclCommandBuilder builder = new PclCommandBuilder().p('*').g('c').v(" 4 ").t('E').d("data");
+        PclCommandBuilder builder = commandExpectingBinaryData(" 4 ").d("data");
 
         ByteBufferPclCommandReader reader = createReader(ByteArrayUtil.concat(builder.toBytes(), "12".getBytes()));
 
@@ -139,7 +139,7 @@ public class ByteBufferPclCommandReaderTest {
 
     @Test
     public void shouldOnlyCaptureTheNumberBytesSpecifiedByTheValueOfTheCommand_PositiveValue() {
-        PclCommandBuilder builder = new PclCommandBuilder().p('*').g('c').v("+4").t('E').d("data");
+        PclCommandBuilder builder = commandExpectingBinaryData("+4").d("data");
 
         ByteBufferPclCommandReader reader = createReader(ByteArrayUtil.concat(builder.toBytes(), "12".getBytes()));
 
@@ -149,7 +149,7 @@ public class ByteBufferPclCommandReaderTest {
 
     @Test
     public void shouldOnlyCaptureTheNumberBytesSpecifiedByTheValueOfTheCommand_DecimalValue() {
-        PclCommandBuilder builder = new PclCommandBuilder().p('*').g('c').v("4.0").t('E').d("data");
+        PclCommandBuilder builder = commandExpectingBinaryData("4.0").d("data");
 
         ByteBufferPclCommandReader reader = createReader(ByteArrayUtil.concat(builder.toBytes(), "12".getBytes()));
 
@@ -159,7 +159,7 @@ public class ByteBufferPclCommandReaderTest {
 
     @Test
     public void shouldOnlyCaptureTheNumberBytesSpecifiedByTheValueOfTheCommand_IntValue() {
-        PclCommandBuilder builder = new PclCommandBuilder().p('*').g('c').v("4").t('E').d("data");
+        PclCommandBuilder builder = commandExpectingBinaryData("4").d("data");
 
         ByteBufferPclCommandReader reader = createReader(ByteArrayUtil.concat(builder.toBytes(), "12".getBytes()));
 
@@ -179,7 +179,7 @@ public class ByteBufferPclCommandReaderTest {
 
     @Test
     public void shouldCaptureBinaryDataWhenTheCommandIs_DecimalValue() {
-        PclCommandBuilder builder = new PclCommandBuilder().p('*').g('c').v("4.0").t('E').d("data");
+        PclCommandBuilder builder = commandExpectingBinaryData("4.0").d("data");
 
         ByteBufferPclCommandReader reader = createReader(builder.toBytes());
 
@@ -275,7 +275,7 @@ public class ByteBufferPclCommandReaderTest {
 
     @Test
     public void shouldTreatTheEscapeCharacterAsPartOfTheBinaryDataIfTheFollowingByteIsNotAParameterizedByte() {
-        PclCommandBuilder builder = new PclCommandBuilder().p('*').g('c').v("2").t('E').d(new byte[]{ESCAPE, '0'});
+        PclCommandBuilder builder = commandExpectingBinaryData("2").d(new byte[]{ESCAPE, '0'});
         byte[] fileContents = builder.toBytes();
 
         ByteBufferPclCommandReader reader = createReader(fileContents);
@@ -355,6 +355,10 @@ public class ByteBufferPclCommandReaderTest {
 
         assert2ByteCommand(0L, expectCommand, reader.nextCommand());
         assert2ByteCommand(2L, expectCommand2, reader.nextCommand());
+    }
+
+    private PclCommandBuilder commandExpectingBinaryData(String value) {
+        return new PclCommandBuilder().p(')').g('s').v(value).t('W');
     }
 
     private ByteBufferPclCommandReader createReader(byte[] fileContents) {

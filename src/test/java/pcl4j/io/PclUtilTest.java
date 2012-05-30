@@ -37,11 +37,6 @@ public class PclUtilTest {
     }
 
     @Test
-    public void isCommandExpectingData_AsciiCodeDecimal() {
-        assertTrue(util.isCommandExpectingData(new PclCommandBuilder().p('*').g('c').v("4").t('E').toBytes()));
-    }
-
-    @Test
     public void isCommandExpectingData_CreateFontHeaderOfBytes() {
         assertTrue(util.isCommandExpectingData(new PclCommandBuilder().p(')').g('s').v("4").t('W').toBytes()));
     }

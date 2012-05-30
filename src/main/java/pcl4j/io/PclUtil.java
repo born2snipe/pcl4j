@@ -20,7 +20,7 @@ import java.util.Arrays;
  * Utility class for checking for the magic PCL bytes
  */
 public class PclUtil {
-    private static final String[] BINARY_DATA_COMMANDS = {"*c#E", ")s#W", "(s#W", "(f#W", "&n#W", "*b#W", "*g#W", "*b#Y", "*b#V", "*v#W", "*l#W", "*o#W", "*m#W", "&p#X"};
+    private static final String[] BINARY_DATA_COMMANDS = {")s#W", "(s#W", "(f#W", "&n#W", "*b#W", "*g#W", "*b#Y", "*b#V", "*v#W", "*l#W", "*o#W", "*m#W", "&p#X"};
     private static final int[] BINARY_DATA_COMMANDS_HASHES = initializeBinaryDataHashes();
     private static final byte[] UNIVERSAL_EXIT_BYTES = "%-12345X".getBytes();
 
