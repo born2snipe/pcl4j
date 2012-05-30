@@ -470,6 +470,11 @@ public class PclUtilTest {
     }
 
     @Test
+    public void convertValueToInt_shouldSupportDecimalPointWithNoLeadingDigits() {
+        assertEquals(0, util.convertValueToInt(".01".getBytes()));
+    }
+
+    @Test
     public void convertValueToInt_shouldReturnZeroIfNoBytesAreGiven() {
         assertEquals(0, util.convertValueToInt(new byte[0]));
     }

@@ -320,10 +320,10 @@ public class PclUtil {
                     byte next = valueBytes[i + 1];
                     if (isNumeric(next)) {
                         value *= 10;
-                    } else if (isDecimal(next)) {
-                        break;
                     }
                 }
+            } else if (isDecimal(current)) {
+                break;
             }
         }
 
