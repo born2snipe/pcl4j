@@ -450,7 +450,8 @@ public class PclUtilTest {
             util.isUniversalExit(commandData);
         }
         long elapsedTime = System.currentTimeMillis() - start;
-        assertTrue("this should be a performant method (elasped: " + elapsedTime + " millis)", elapsedTime < 100);
+        System.out.println("PclUtilTest.isUniversalExit_shouldBePerformant -- " + elapsedTime);
+        assertTrue("this should be a performant method (elasped: " + elapsedTime + " millis)", elapsedTime < 200);
     }
 
     @Test
@@ -487,6 +488,7 @@ public class PclUtilTest {
             util.convertValueToInt(commandData);
         }
         long elapsedTime = System.currentTimeMillis() - start;
+        System.out.println("PclUtilTest.convertValueToInt_shouldBePerformant -- " + elapsedTime);
         assertTrue("this should be a performant method (elasped: " + elapsedTime + " millis)", elapsedTime < 500);
     }
 
