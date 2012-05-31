@@ -29,11 +29,6 @@ public class ParameterizedCommand extends PclCommand {
         super(bytes);
     }
 
-    @Deprecated
-    public ParameterizedCommand(long position, byte[] bytes) {
-        super(position, bytes);
-    }
-
     public ParameterizedCommand(long position) {
         super(position);
     }

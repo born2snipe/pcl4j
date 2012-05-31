@@ -237,16 +237,6 @@ public class PclUtil {
         return byteToFind - '0';
     }
 
-    private void requiresParameterizedCommand(PclCommand command) {
-        if (!(command instanceof ParameterizedCommand)) {
-            throw new IllegalArgumentException("Parameterized command required, but received a 2 byte command");
-        }
-    }
-
-    private boolean is2ByteCommand(PclCommand command) {
-        return command instanceof TwoByteCommand;
-    }
-
     private byte getTerminatorByte(byte[] commandBytes) {
         return commandBytes[commandBytes.length - 1];
     }
