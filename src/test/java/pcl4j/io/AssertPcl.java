@@ -30,6 +30,28 @@ public class AssertPcl {
         assertCommand(expectedPosition, expectedCommandBytes, command);
     }
 
+    public static void assertParameterizedCommand(long expectedPosition, PclCommand expectedCommand, PclCommand command) {
+        assertEquals("not the right kind of command", ParameterizedCommand.class, command.getClass());
+
+        ParameterizedCommand actualCommand = (ParameterizedCommand) command;
+        ParameterizedCommand expectedParameterizedCommand = (ParameterizedCommand) expectedCommand;
+        assertEquals("group bytes should match", (char) expectedParameterizedCommand.getGroupByte(), (char) actualCommand.getGroupByte());
+        assertEquals("parameterized bytes should match", (char) expectedParameterizedCommand.getParameterizedByte(), (char) actualCommand.getParameterizedByte());
+        assertEquals("terminator bytes should match", (char) expectedParameterizedCommand.getTerminatorByte(), (char) actualCommand.getTerminatorByte());
+
+        byte[] expectedValue = expectedParameterizedCommand.getValueBytes();
+        byte[] actualValue = actualCommand.getValueBytes();
+        assertTrue("value bytes should match expected=[" + new String(expectedValue) + "], actual=[" + new String(actualValue) + "]",
+                Arrays.equals(expectedValue, actualValue));
+
+        byte[] expectedDataValue = expectedParameterizedCommand.getDataBytes();
+        byte[] actualDataValue = actualCommand.getDataBytes();
+        assertTrue("data bytes should match expected=[" + new String(expectedDataValue) + "], actual=[" + new String(actualDataValue) + "]",
+                Arrays.equals(expectedDataValue, actualDataValue));
+
+        assertCommand(expectedPosition, expectedCommand.getBytes(), command);
+    }
+
     public static void assertTextCommand(long expectedPosition, byte[] expectedCommandBytes, PclCommand command) {
         assertEquals("not the right kind of command", TextCommand.class, command.getClass());
         assertCommand(expectedPosition, expectedCommandBytes, command);

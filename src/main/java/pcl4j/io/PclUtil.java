@@ -116,16 +116,6 @@ public class PclUtil {
     }
 
     /**
-     * Determines if the given command has binary data
-     *
-     * @param command the command to check
-     * @return true - binary data was found<br/>false - no binary data was found
-     */
-    public boolean hasBinaryData(PclCommand command) {
-        return getBinaryData(command).length > 0;
-    }
-
-    /**
      * Converts a termination byte into a parameter byte
      *
      * @param terminationByte the termination byte to be converted
@@ -137,44 +127,6 @@ public class PclUtil {
             throw new IllegalArgumentException("Not a terminator byte given. byte=[" + terminationByte + "]");
         }
         return (byte) (terminationByte + PARAMETER_TO_TERMINATOR_DIFFERENCE);
-    }
-
-    /**
-     * Gets the Group byte from the given command
-     *
-     * @param command the command to get the group byte from
-     * @return the group byte of the command
-     */
-    public byte getGroupByte(PclCommand command) {
-        requiresParameterizedCommand(command);
-        return command.getBytes()[GROUP_BYTE_POSITION];
-    }
-
-    /**
-     * Gets the parameterized byte from the given command
-     *
-     * @param command the command to get the parameterized byte from
-     * @return the parameterized byte of the command
-     */
-    public byte getParameterizedByte(PclCommand command) {
-        return command.getBytes()[PARAMETERIZED_BYTE_POSITION];
-    }
-
-    /**
-     * Gets the terminator byte from the given command
-     *
-     * @param command the command to get the terminator byte from
-     * @return the terminator byte of the command
-     */
-    public byte getTerminatorByte(PclCommand command) {
-        requiresParameterizedCommand(command);
-        byte[] data = command.getBytes();
-        for (int i = 0; i < data.length; i++) {
-            if (isTermination(data[i])) {
-                return data[i];
-            }
-        }
-        throw new IllegalStateException("Could not locate terminator byte in command: " + command);
     }
 
     /**
@@ -190,71 +142,6 @@ public class PclUtil {
         return (byte) (parameterByte - PARAMETER_TO_TERMINATOR_DIFFERENCE);
     }
 
-    /**
-     * Captures the binary data of the given command
-     *
-     * @param command - the command to capture the binary data from
-     * @return a byte array containing all the binary data
-     */
-    public byte[] getBinaryData(PclCommand command) {
-        if (is2ByteCommand(command)) {
-            return new byte[0];
-        }
-
-        byte[] data = command.getBytes();
-        int startOfBinaryDataIndex = -1;
-        for (int i = GROUP_BYTE_POSITION + 1; i < data.length; i++) {
-            if (isTermination(data[i])) {
-                startOfBinaryDataIndex = i + 1;
-                break;
-            }
-        }
-
-        byte[] temp = new byte[data.length - startOfBinaryDataIndex];
-        System.arraycopy(data, startOfBinaryDataIndex, temp, 0, temp.length);
-
-        return temp;
-    }
-
-    /**
-     * Captures the value bytes of the given command
-     * <p/>
-     * Defaults the value to zero if a 'value' is not found in the command
-     *
-     * @param command - the command to capture the value from
-     * @return a byte array containing all the value bytes
-     */
-    public byte[] getValue(PclCommand command) {
-        requiresParameterizedCommand(command);
-        return getValue(command.getBytes());
-    }
-
-    /**
-     * Captures the value bytes of the given command bytes
-     * <p/>
-     * Defaults the value to zero if a 'value' is not found in the command
-     *
-     * @param commandBytes - the command to capture the value from
-     * @return a byte array containing all the value bytes
-     */
-    public byte[] getValue(byte[] commandBytes) {
-        UnsyncronizedByteArrayOutputStream output = new UnsyncronizedByteArrayOutputStream(commandBytes.length);
-        if (isTermination(commandBytes[VALUE_BYTE_START_POSITION])) {
-            output.write('0');
-        } else {
-            for (int i = VALUE_BYTE_START_POSITION; i < commandBytes.length; i++) {
-                byte currentByte = commandBytes[i];
-                if (currentByte == getTerminatorByte(commandBytes)) {
-                    break;
-                } else if (isParameterCharacter(currentByte)) {
-                    output.reset();
-                } else {
-                    output.write(currentByte);
-                }
-            }
-        }
-        return output.toByteArray();
-    }
 
     /**
      * Determines if the given command is expecting binary data to follow it
@@ -347,7 +234,7 @@ public class PclUtil {
     }
 
     private int convertNumberCharacterToNumberValue(byte byteToFind) {
-        return ('0' - byteToFind) * -1;
+        return byteToFind - '0';
     }
 
     private void requiresParameterizedCommand(PclCommand command) {
@@ -357,7 +244,7 @@ public class PclUtil {
     }
 
     private boolean is2ByteCommand(PclCommand command) {
-        return command.getBytes().length == 2;
+        return command instanceof TwoByteCommand;
     }
 
     private byte getTerminatorByte(byte[] commandBytes) {

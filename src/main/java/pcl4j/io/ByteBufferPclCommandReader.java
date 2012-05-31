@@ -28,9 +28,10 @@ public class ByteBufferPclCommandReader implements PclCommandReader {
     protected ByteBuffer buffer;
     private long filePosition = 0;
     private Queue<PclCommand> queuedCommands = new LinkedList<PclCommand>();
-    private UnsyncronizedByteArrayOutputStream commandPrefixBytes = new UnsyncronizedByteArrayOutputStream(3);
-    private UnsyncronizedByteArrayOutputStream commandData = new UnsyncronizedByteArrayOutputStream(1024);
-    private UnsyncronizedByteArrayOutputStream valueData = new UnsyncronizedByteArrayOutputStream(16);
+    private UnsynchronizedByteArrayOutputStream commandPrefixBytes = new UnsynchronizedByteArrayOutputStream(3);
+    private UnsynchronizedByteArrayOutputStream commandData = new UnsynchronizedByteArrayOutputStream(32);
+    private UnsynchronizedByteArrayOutputStream binaryData = new UnsynchronizedByteArrayOutputStream(1024);
+    private UnsynchronizedByteArrayOutputStream valueData = new UnsynchronizedByteArrayOutputStream(16);
     private long commandPosition;
 
     public ByteBufferPclCommandReader(byte[] entirePclFileContents) {
@@ -59,6 +60,7 @@ public class ByteBufferPclCommandReader implements PclCommandReader {
             return null;
         }
 
+        binaryData.reset();
         valueData.reset();
         commandData.reset();
         commandPrefixBytes.reset();
@@ -80,14 +82,17 @@ public class ByteBufferPclCommandReader implements PclCommandReader {
 
         byte currentByte = readNextByte();
         if (pclUtil.is2ByteCommandOperator(currentByte)) {
-            commandData.write(currentByte);
-            queueUpCommand();
+            queueUpCommand(pclCommandFactory.buildTwoByteCommand(commandPosition, currentByte));
         } else if (pclUtil.isParameterizedCharacter(currentByte)) {
+            byte parameterizedByte = currentByte;
+
             commandData.write(currentByte);
             commandPrefixBytes.write(currentByte);
             currentByte = readNextByte();
 
             if (pclUtil.isGroupCharacter(currentByte)) {
+                byte groupByte = currentByte;
+
                 commandData.write(currentByte);
                 commandPrefixBytes.write(currentByte);
 
@@ -95,22 +100,20 @@ public class ByteBufferPclCommandReader implements PclCommandReader {
                     currentByte = readNextByte();
 
                     if (isACompoundCommand(currentByte)) {
-                        writeValueDataToCommand();
                         currentByte = pclUtil.changeParameterToTerminator(currentByte);
-                        commandData.write(currentByte);
-                        queueUpCommand();
+                        queueUpParameterizedCommand(parameterizedByte, groupByte, currentByte);
                         copyCommandPrefixToCommand();
                     } else if (isTerminationByte(currentByte)) {
-                        writeValueDataToCommand();
                         commandData.write(currentByte);
                         captureBinaryDataAsNeeded();
-                        queueUpCommand();
+                        queueUpParameterizedCommand(parameterizedByte, groupByte, currentByte);
                         break;
                     } else {
                         valueData.write(currentByte);
                     }
                 } while (true);
             } else {
+                byte groupByte = currentByte;
                 commandData.write(currentByte);
 
                 do {
@@ -120,10 +123,10 @@ public class ByteBufferPclCommandReader implements PclCommandReader {
                         commandData.write(currentByte);
                         if (pclUtil.isUniversalExit(commandData.toByteArray())) {
                             while (isNextByteNotAnEscapeByte()) {
-                                commandData.write(readNextByte());
+                                binaryData.write(readNextByte());
                             }
                         }
-                        queueUpCommand();
+                        queueUpParameterizedCommand(parameterizedByte, groupByte, currentByte);
                         break;
                     } else {
                         valueData.write(currentByte);
@@ -145,11 +148,19 @@ public class ByteBufferPclCommandReader implements PclCommandReader {
         commandData.write(commandPrefixBytes.toByteArray());
     }
 
-    private void queueUpCommand() {
-        queuedCommands.add(pclCommandFactory.build(commandPosition, commandData.toByteArray()));
+    private void queueUpCommand(PclCommand command) {
+        queuedCommands.add(command);
         valueData.reset();
         commandData.reset();
+        binaryData.reset();
         commandPosition = filePosition;
+    }
+
+    private void queueUpParameterizedCommand(byte parameterizedByte, byte groupByte, byte terminatorByte) {
+        PclCommand command = pclCommandFactory.buildParameterizedCommand(
+                commandPosition, parameterizedByte, groupByte, valueData.toByteArray(), terminatorByte, binaryData.toByteArray()
+        );
+        queueUpCommand(command);
     }
 
     private void writeValueDataToCommand() {
@@ -165,7 +176,9 @@ public class ByteBufferPclCommandReader implements PclCommandReader {
             int numberOfBytesToRead = commandValueAsInt();
             int count = 0;
             while (isNotEOF() && count < numberOfBytesToRead) {
-                commandData.write(readNextByte());
+                byte value = readNextByte();
+                binaryData.write(value);
+                commandData.write(value);
                 count++;
             }
         }
@@ -177,11 +190,11 @@ public class ByteBufferPclCommandReader implements PclCommandReader {
 
     private void textCommand() {
         while (isNotEOF() && !isNextByteAnEscapeByte()) {
-            commandData.write(readNextByte());
+            binaryData.write(readNextByte());
         }
 
-        if (commandData.size() > 0) {
-            queueUpCommand();
+        if (binaryData.size() > 0) {
+            queueUpCommand(pclCommandFactory.buildTextCommand(commandPosition, binaryData.toByteArray()));
         }
     }
 

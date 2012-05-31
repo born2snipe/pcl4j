@@ -23,8 +23,8 @@ public class PclCommandBuilder {
     private static final PclUtil UTIL = new PclUtil();
     private boolean validate;
     private byte parameterized, group, terminator;
-    private String value;
-    private byte[] binaryData;
+    private String value = "";
+    private byte[] binaryData = new byte[0];
 
     /**
      * Constructs a builder with validation turned on
@@ -139,18 +139,7 @@ public class PclCommandBuilder {
      * @return a byte array representing the command
      */
     public byte[] toBytes() {
-        UnsyncronizedByteArrayOutputStream data = new UnsyncronizedByteArrayOutputStream(32);
-        data.write(PclUtil.ESCAPE);
-        data.write(parameterized);
-        data.write(group);
-        if (value != null) {
-            data.write(value.getBytes());
-        }
-        data.write(terminator);
-        if (binaryData != null) {
-            data.write(binaryData);
-        }
-        return data.toByteArray();
+        return toCommand().getBytes();
     }
 
     /**
@@ -169,6 +158,6 @@ public class PclCommandBuilder {
      * @return a new PclCommand
      */
     public PclCommand toCommand(long position) {
-        return FACTORY.build(position, toBytes());
+        return FACTORY.buildParameterizedCommand(position, parameterized, group, value.getBytes(), terminator, binaryData);
     }
 }

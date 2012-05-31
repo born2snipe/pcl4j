@@ -18,12 +18,12 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Arrays;
 
-public class UnsyncronizedByteArrayOutputStream extends OutputStream {
+public class UnsynchronizedByteArrayOutputStream extends OutputStream {
     private byte[] buffer;
     private int position = 0;
     private byte[] cache;
 
-    public UnsyncronizedByteArrayOutputStream(int initialSize) {
+    public UnsynchronizedByteArrayOutputStream(int initialSize) {
         buffer = new byte[initialSize];
     }
 

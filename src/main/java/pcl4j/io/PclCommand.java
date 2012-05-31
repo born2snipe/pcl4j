@@ -35,6 +35,10 @@ public abstract class PclCommand {
         this.bytes = bytes;
     }
 
+    public PclCommand(long position) {
+        this(position, new byte[0]);
+    }
+
     public byte[] getBytes() {
         return bytes;
     }
@@ -50,6 +54,7 @@ public abstract class PclCommand {
 
     public String toAscii() {
         StringBuilder builder = new StringBuilder();
+        byte[] bytes = getBytes();
         for (int i = 1; i < bytes.length; i++) {
             builder.append((char) bytes[i]);
         }

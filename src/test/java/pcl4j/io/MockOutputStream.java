@@ -20,7 +20,7 @@ import java.io.OutputStream;
 
 public class MockOutputStream extends OutputStream {
     private boolean closed = false;
-    private UnsyncronizedByteArrayOutputStream output = new UnsyncronizedByteArrayOutputStream(32);
+    private UnsynchronizedByteArrayOutputStream output = new UnsynchronizedByteArrayOutputStream(32);
     private IOException exceptionToThrow;
 
     @Override

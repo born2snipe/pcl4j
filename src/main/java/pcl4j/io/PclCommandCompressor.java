@@ -44,7 +44,7 @@ public class PclCommandCompressor {
 
         byte[] commandToAppendToBytes = commandToAppendTo.getBytes();
         byte[] commandToAppendBytes = commandToAppend.getBytes();
-        UnsyncronizedByteArrayOutputStream compressedBytes = new UnsyncronizedByteArrayOutputStream(commandToAppendBytes.length + commandToAppendToBytes.length);
+        UnsynchronizedByteArrayOutputStream compressedBytes = new UnsynchronizedByteArrayOutputStream(commandToAppendBytes.length + commandToAppendToBytes.length);
 
         for (int i = 0; i < commandToAppendToBytes.length; i++) {
             byte currentByte = commandToAppendToBytes[i];
@@ -78,9 +78,11 @@ public class PclCommandCompressor {
             return false;
         }
 
-        if (parameterizedBytesDoNotMatch(commandToAppendTo, commandToAppend)
-                || groupBytesDoNotMatch(commandToAppendTo, commandToAppend)
-                || pclUtil.hasBinaryData(commandToAppendTo)) {
+        ParameterizedCommand command1 = (ParameterizedCommand) commandToAppendTo;
+        ParameterizedCommand command2 = (ParameterizedCommand) commandToAppend;
+        if (parameterizedBytesDoNotMatch(command1, command2)
+                || groupBytesDoNotMatch(command1, command2)
+                || command1.getDataBytes().length > 0) {
             return false;
         }
 
@@ -95,20 +97,20 @@ public class PclCommandCompressor {
         return command == null || otherCommand == null;
     }
 
-    private boolean groupBytesDoNotMatch(PclCommand command, PclCommand otherCommand) {
-        return pclUtil.getGroupByte(command) != pclUtil.getGroupByte(otherCommand);
+    private boolean groupBytesDoNotMatch(ParameterizedCommand command, ParameterizedCommand otherCommand) {
+        return command.getGroupByte() != otherCommand.getGroupByte();
     }
 
     private boolean isEitherCommandA2ByteCommand(PclCommand command, PclCommand otherCommand) {
         return is2ByteCommand(command) || is2ByteCommand(otherCommand);
     }
 
-    private boolean parameterizedBytesDoNotMatch(PclCommand command, PclCommand otherCommand) {
-        return pclUtil.getParameterizedByte(command) != pclUtil.getParameterizedByte(otherCommand);
+    private boolean parameterizedBytesDoNotMatch(ParameterizedCommand command, ParameterizedCommand otherCommand) {
+        return command.getParameterizedByte() != otherCommand.getParameterizedByte();
     }
 
     private boolean is2ByteCommand(PclCommand command) {
-        return command.getBytes().length == 2;
+        return command instanceof TwoByteCommand;
     }
 
 }

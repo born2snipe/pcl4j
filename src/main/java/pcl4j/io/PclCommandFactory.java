@@ -18,25 +18,47 @@ package pcl4j.io;
  * A factory that builds a PclCommand object
  */
 public class PclCommandFactory {
-    private static final PclUtil UTIL = new PclUtil();
 
     /**
-     * Build a PclCommand from the given bytes and position
+     * Builds a parameterized command
      *
-     * @param position    - the location of the ESC byte of the command
-     * @param commandData - the bytes that make of the entire command
-     * @return a PclCommand object
+     * @param position      - the location the command was found in the file
+     * @param parameterized - the parameterized byte
+     * @param group         - the group byte
+     * @param value         - the bytes that make up the value
+     * @param terminator    - the terminator byte
+     * @param data          - binary data following the command
+     * @return a new instance of a PclCommand
      */
-    public PclCommand build(long position, byte[] commandData) {
-        if (UTIL.isEscape(commandData[0])) {
-            if (commandData.length == 2) {
-                return new TwoByteCommand(position, commandData);
-            }
-
-            return new ParameterizedCommand(position, commandData);
-        }
-
-        return new TextCommand(position, commandData);
+    public PclCommand buildParameterizedCommand(long position, byte parameterized, byte group, byte[] value, byte terminator, byte[] data) {
+        ParameterizedCommand command = new ParameterizedCommand(position);
+        command.setParameterizedByte(parameterized);
+        command.setGroupByte(group);
+        command.setValueBytes(value);
+        command.setTerminatorByte(terminator);
+        command.setDataBytes(data);
+        return command;
     }
 
+    /**
+     * Builds a text command
+     *
+     * @param position - the location the command was found in the file
+     * @param textData - the data making up the text
+     * @return a new instance of a PclCommand
+     */
+    public PclCommand buildTextCommand(long position, byte[] textData) {
+        return new TextCommand(position, textData);
+    }
+
+    /**
+     * Builds a 2 byte command
+     *
+     * @param position    - the location the command was found in the file
+     * @param commandByte - the 2nd byte of the command
+     * @return a new instance of a PclCommand
+     */
+    public PclCommand buildTwoByteCommand(long position, byte commandByte) {
+        return new TwoByteCommand(position, new byte[]{PclUtil.ESCAPE, commandByte});
+    }
 }

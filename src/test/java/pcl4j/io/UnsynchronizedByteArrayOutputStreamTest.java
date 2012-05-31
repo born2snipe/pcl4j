@@ -19,13 +19,13 @@ import org.junit.Test;
 
 import static junit.framework.Assert.*;
 
-public class UnsyncronizedByteArrayOutputStreamTest {
+public class UnsynchronizedByteArrayOutputStreamTest {
 
-    private UnsyncronizedByteArrayOutputStream outputStream;
+    private UnsynchronizedByteArrayOutputStream outputStream;
 
     @Before
     public void setUp() throws Exception {
-        outputStream = new UnsyncronizedByteArrayOutputStream(16);
+        outputStream = new UnsynchronizedByteArrayOutputStream(16);
     }
 
     @Test

@@ -18,7 +18,10 @@ package pcl4j.io;
 import org.junit.Before;
 import org.junit.Test;
 
-import static junit.framework.Assert.*;
+import java.util.Arrays;
+
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
 
 public class PclCommandFactoryTest {
     private PclCommandFactory factory;
@@ -30,12 +33,19 @@ public class PclCommandFactoryTest {
 
     @Test
     public void shouldBuildAParameterizedCommandWhenGivenMoreThan2Bytes() {
-        byte[] data = {PclUtil.ESCAPE, 1, 2, 3};
+        byte[] data = {PclUtil.ESCAPE, 1, 2, 3, 4, 5};
 
-        PclCommand command = factory.build(3L, data);
+        PclCommand command = factory.buildParameterizedCommand(
+                3L,
+                (byte) 1,
+                (byte) 2,
+                new byte[]{3},
+                (byte) 4,
+                new byte[]{5}
+        );
 
         assertTrue(command instanceof ParameterizedCommand);
-        assertSame(data, command.getBytes());
+        assertTrue(Arrays.equals(data, command.getBytes()));
         assertEquals(3L, command.getPosition());
     }
 
@@ -43,10 +53,10 @@ public class PclCommandFactoryTest {
     public void shouldBuildA2ByteCommandWhenGivenOnly2Bytes() {
         byte[] data = {PclUtil.ESCAPE, 1};
 
-        PclCommand command = factory.build(2L, data);
+        PclCommand command = factory.buildTwoByteCommand(2L, (byte) 1);
 
         assertTrue(command instanceof TwoByteCommand);
-        assertSame(data, command.getBytes());
+        assertTrue(Arrays.equals(data, command.getBytes()));
         assertEquals(2L, command.getPosition());
     }
 
@@ -54,10 +64,10 @@ public class PclCommandFactoryTest {
     public void shouldBuildATextCommand() {
         byte[] data = {1};
 
-        PclCommand command = factory.build(1L, data);
+        PclCommand command = factory.buildTextCommand(1L, data);
 
         assertTrue(command instanceof TextCommand);
-        assertSame(data, command.getBytes());
+        assertTrue(Arrays.equals(data, command.getBytes()));
         assertEquals(1L, command.getPosition());
     }
 
