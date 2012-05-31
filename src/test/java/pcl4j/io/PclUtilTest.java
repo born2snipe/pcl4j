@@ -289,7 +289,7 @@ public class PclUtilTest {
         }
         long elapsedTime = System.currentTimeMillis() - start;
         System.out.println("PclUtilTest.isUniversalExit_shouldBePerformant -- " + elapsedTime);
-        assertTrue("this should be a performant method (elasped: " + elapsedTime + " millis)", elapsedTime < 200);
+        assertTrue("this should be a performant method (elasped: " + elapsedTime + " millis)", elapsedTime < 100);
     }
 
     @Test
@@ -332,7 +332,7 @@ public class PclUtilTest {
         }
         long elapsedTime = System.currentTimeMillis() - start;
         System.out.println("PclUtilTest.convertValueToInt_shouldBePerformant -- " + elapsedTime);
-        assertTrue("this should be a performant method (elasped: " + elapsedTime + " millis)", elapsedTime < 500);
+        assertTrue("this should be a performant method (elasped: " + elapsedTime + " millis)", elapsedTime < 100);
     }
 
     private void assertBytes(byte[] expectedValue, byte[] actualBytes) {
