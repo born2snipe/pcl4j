@@ -29,6 +29,16 @@ public class UnsynchronizedByteArrayOutputStreamTest {
     }
 
     @Test
+    public void reset_shouldClearTheByteArrayCache() {
+        outputStream.write(1);
+        outputStream.toByteArray();
+        outputStream.reset();
+
+        assertEquals(0, outputStream.toByteArray().length);
+    }
+
+
+    @Test
     public void toByteArray_shouldRecreateCacheAfterTheNextWrite() {
         outputStream.write(1);
         byte[] bytes = outputStream.toByteArray();

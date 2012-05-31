@@ -56,6 +56,7 @@ public class UnsynchronizedByteArrayOutputStream extends OutputStream {
 
     public void reset() {
         position = 0;
+        cache = null;
     }
 
     @Override
